@@ -21,13 +21,8 @@ os.chdir(script_dir)
 
 
 def open_program_docs():
-    pdf_file_path = "Documentation\Biomechanics_Toolbox_Tutorial.pdf"
-    os.startfile(pdf_file_path)
-
-
-def open_function_docs():
-    pdf_file_path = "Documentation\Biomechanics_Toolbox_Tutorial.pdf"
-    os.startfile(pdf_file_path)
+    help_file_path = "BiomechanicsToolbox.docx"
+    os.startfile(help_file_path)
 
 
 def create_label_entry(
