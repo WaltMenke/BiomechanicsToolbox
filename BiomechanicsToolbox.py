@@ -12,7 +12,7 @@ import subprocess
 import spm1d as spm
 import re
 import webbrowser
-import ToolboxFunctions as bf
+import ToolboxFunctions as tf
 from PIL import Image, ImageTk
 import openpyxl
 
@@ -168,14 +168,14 @@ def open_scriptgen_tab():
         if not script_entry.get().endswith(".v3s"):
             messagebox.showerror(
                 "Input Error",
-                f"Script file is '{script_entry.get()}'. Please enter the path to the bf.v3d pipeline file (.v3s).",
+                f"Script file is '{script_entry.get()}'. Please enter the path to the tf.v3d pipeline file (.v3s).",
                 icon="error",
             )
             return
         if not model_entry.get().endswith(".mdh"):
             messagebox.showerror(
                 "Input Error",
-                f"Model file is '{model_entry.get()}'. Please enter the path to the bf.v3d model file (.mdh).",
+                f"Model file is '{model_entry.get()}'. Please enter the path to the tf.v3d model file (.mdh).",
                 icon="error",
             )
             return
@@ -186,7 +186,7 @@ def open_scriptgen_tab():
                 icon="error",
             )
             return
-        bf.v3d_generate_scripts(
+        tf.generate_scripts(
             script_entry.get(),
             model_entry.get(),
             heightweight_entry.get(),
@@ -197,7 +197,7 @@ def open_scriptgen_tab():
         script_direc = filedialog.askopenfilename(
             title="Select Script Template",
             multiple=False,
-            filetypes=(("bf.v3d Pipeline", "*.v3s"),),
+            filetypes=(("tf.v3d Pipeline", "*.v3s"),),
         )
         if not script_direc:
             return
@@ -208,7 +208,7 @@ def open_scriptgen_tab():
         model_direc = filedialog.askopenfilename(
             title="Select Model Template",
             multiple=False,
-            filetypes=(("bf.v3d Model", "*.mdh"),),
+            filetypes=(("tf.v3d Model", "*.mdh"),),
         )
         if not model_direc:
             return
@@ -278,7 +278,7 @@ def open_batch_tab():
     main_tab.select(batch_tab)
     batch_label = tk.Label(
         batch_tab,
-        text="This function creates a 3D NumPy array of data points (dimension 1), variables and trials (dimension 2),\nand subjects (dimension 3) from a list of bf.v3d output files for event picking or quality checking.\n\nNote: Non-normalized inputs (default) will have rows equal to the largest row amount across all files.\nNaN will fill extra spaces in other trials.",
+        text="This function creates a 3D NumPy array of data points (dimension 1), variables and trials (dimension 2),\nand subjects (dimension 3) from a list of tf.v3d output files for event picking or quality checking.\n\nNote: Non-normalized inputs (default) will have rows equal to the largest row amount across all files.\nNaN will fill extra spaces in other trials.",
     )
     batch_label.pack(fill="x", expand=True, anchor="n")
 
@@ -299,7 +299,7 @@ def open_batch_tab():
         X = int(components[0])
         Y = int(components[1])
         Z = int(components[2])
-        bf.v3d_batch(
+        tf.batch(
             input_entry.get(),
             file_search_entry.get(),
             output_entry.get(),
@@ -317,7 +317,7 @@ def open_batch_tab():
 
     def batch_in():
         in_direc = filedialog.askdirectory(
-            title="Select bf.v3d Data Inputs",
+            title="Select tf.v3d Data Inputs",
         )
         if not in_direc:
             return
@@ -333,7 +333,7 @@ def open_batch_tab():
 
     batch_frame = ttk.Frame(batch_tab)
     batch_frame.pack(expand=1, side="top")
-    input_entry = create_label_entry(batch_frame, "bf.v3d Data Inputs:", 80, "top")
+    input_entry = create_label_entry(batch_frame, "tf.v3d Data Inputs:", 80, "top")
     browse_in_button(batch_frame, "Browse", batch_in)
     output_entry = create_label_entry(batch_frame, "Output Directory:", 80, "top")
     browse_out_button(batch_frame, "Browse", batch_out)
@@ -390,7 +390,7 @@ def open_normalize_tab():
             norm_out.set(out_direc)
 
     def toolbox_normalize():
-        bf.v3d_normalize(norm_in.get(), norm_out.get())
+        tf.normalize(norm_in.get(), norm_out.get())
 
     normalize_label.pack(fill="x", anchor="n", expand=True)
     normalize_frame = ttk.Frame(normalize_tab)
@@ -443,11 +443,11 @@ def open_quality_check_tab():
             return
 
         if subject_idx_entry.get() == "All":
-            _, sub_count = bf.v3d_qual_metadata(qual_check_in)
+            _, sub_count = tf.qual_metadata(qual_check_in)
             subject_idx = range(0, sub_count)
         else:
             sub_num = len(subject_idx_entry.get().split(","))
-            # _, sub_count = bf.v3d_qual_metadata(qual_check_in)
+            # _, sub_count = tf.qual_metadata(qual_check_in)
             # if sub_count not in range(sub_num + 1):
             #     messagebox.showerror(
             #         "Input Error",
@@ -461,7 +461,7 @@ def open_quality_check_tab():
                 subject_num = subject_idx_entry.get().split(",")
             subject_idx = [int(x) - 1 for x in subject_num]
         for sub in range(0, len(subject_idx)):
-            plots_out += bf.v3d_quality_check(qual_check_in, int(subject_idx[sub]))
+            plots_out += tf.quality_check(qual_check_in, int(subject_idx[sub]))
         qual_plot_num = 0
 
         def exit_qual(qual_window):
@@ -646,7 +646,7 @@ def open_eventpick_tab():
         stripped_vars = [
             re.sub(pattern, "", var) for var in flattened_vars
         ]  # applies regex pattern
-        data_cube, file_vars, _, components = bf.v3d_batched_reshape(
+        data_cube, file_vars, _, components = tf.batch_reshape(
             data_in
         )  # reshapes the input data
         trials = int(data_cube.shape[1] / len(var_bool_array))  # number of trials
@@ -724,7 +724,7 @@ def open_eventpick_tab():
         return select_handler
 
     def event_listbox_gen(normalized_data, listbox):
-        _, var_list, _, comp_list = bf.v3d_batched_reshape(normalized_data)
+        _, var_list, _, comp_list = tf.batch_reshape(normalized_data)
         appended_vars = []
         for i in range(len(var_list)):
             current_xyz = comp_list[i % len(comp_list)]
@@ -804,7 +804,7 @@ def open_ensemble_tab():
             var_listbox(ensemble_in.get(), variables_listbox, axes_listbox)
 
     def var_listbox(normalized_data, listbox_a, listbox_b):
-        _, var_list, _, comp_list = bf.v3d_batched_reshape(normalized_data)
+        _, var_list, _, comp_list = tf.batch_reshape(normalized_data)
         appended_vars = []
         for i in range(len(var_list)):
             current_xyz = comp_list[i % len(comp_list)]
@@ -917,32 +917,30 @@ def open_ensemble_tab():
                 )
                 if selected
             ]
-            norm_cube, _, _, _ = bf.v3d_batched_reshape(ensemble_in)
+            norm_cube, _, _, _ = tf.batch_reshape(ensemble_in)
 
             if norm_cube.ndim != 3:
                 raise ValueError(
-                    "Data input does not have 3 dimensions. Check the bf.v3d_batch() function output."
+                    "Data input does not have 3 dimensions. Check the tf.batch() function output."
                 )
             are_floats = np.all(np.isfinite(norm_cube))  # Check for NaNs
             if not are_floats:
                 raise ValueError(
-                    "Data input contains NaNs. Check the bf.v3d_batch() function output."
+                    "Data input contains NaNs. Check the tf.batch() function output."
                 )
             if norm_cube.shape[0] != 101:
                 raise ValueError(
-                    "This data doesn't look normalized to 101 data points. Check the bf.v3d_batch/bf.v3d_normalize function output."
+                    "This data doesn't look normalized to 101 data points. Check the tf.batch/tf.normalize function output."
                 )
-            ensemble_means, ensemble_std = bf.v3d_process_cube(
-                norm_cube, var_bool_array
-            )
+            ensemble_means, ensemble_std = tf.process_cube(norm_cube, var_bool_array)
 
             if "ensemble_means" not in locals() or np.size(ensemble_means) == 0:
                 raise ValueError(
-                    "Ensemble_means is either not defined or has size 0. Check the bf.v3d_process_cube() function."
+                    "Ensemble_means is either not defined or has size 0. Check the tf.process_cube() function."
                 )
             if "ensemble_std" not in locals() or np.size(ensemble_std) == 0:
                 raise ValueError(
-                    "Ensemble_std is either not defined or has size 0. Check the bf.v3d_process_cube() function."
+                    "Ensemble_std is either not defined or has size 0. Check the tf.process_cube() function."
                 )
 
             flattened_axes = [
@@ -953,7 +951,7 @@ def open_ensemble_tab():
             plots_out = []
             for i in range(sum(var_bool_array)):
                 plots_out.append(
-                    bf.v3d_ensemble_plot(
+                    tf.ensemble_plot(
                         ensemble_means[:, i],
                         ensemble_std[:, i],
                         mean_color=str(mean_color_var.get()),
@@ -967,7 +965,7 @@ def open_ensemble_tab():
                 )
             if plots_out == []:
                 raise ValueError(
-                    "Plots_out is empty. Check the bf.v3d_ensemble_plot() function."
+                    "Plots_out is empty. Check the tf.ensemble_plot() function."
                 )
             for i, (fig, _) in enumerate(plots_out):
                 output_tiff_path = os.path.join(
@@ -1107,6 +1105,8 @@ def open_spm_tab():
         spm_tab,
         text="This function allows you to use the spm1d package to compare one\nor more groups with a variety of statistical tests.",
     )
+    spm_options_dict = {}
+
     spm_label.pack(fill="x", anchor="n", expand=True)
 
     dropdown_frame = ttk.Frame(spm_tab)
@@ -1246,18 +1246,18 @@ def open_spm_tab():
             default_val=300,
             side="top",
         )
-        g1_label, g1_color = create_dropdown(
-            parent=options,
-            label_text="Group 1 Color:",
-            options=color_choices,
-        )
-        g1_color.set(color_choices[0])
-        g2_label, g2_color = create_dropdown(
-            parent=options,
-            label_text="Group 2 Color:",
-            options=color_choices,
-        )
-        g2_color.set(color_choices[1])
+
+        dropdowns = []
+        for group_num in range(1, int(selected_group) + 1):
+            label_text = f"Group {group_num} Color:"
+            dropdown_label, dropdown_color = create_dropdown(
+                parent=options,
+                label_text=label_text,
+                options=color_choices,
+            )
+            dropdown_color.set(color_choices[group_num - 1])
+            dropdowns.append((dropdown_label, dropdown_color))
+
         plot_x_label = create_label_entry(
             parent=options,
             label_text="Plot X Label:",
@@ -1265,12 +1265,15 @@ def open_spm_tab():
             default_val="Percent of 'X'",
             side="top",
         )
-
+        group_strings = ["Group 1", "Group 2", "Group 3"]  # Set possible groups names
+        default_group_names = ", ".join(
+            group_strings[: int(selected_group)]
+        )  # Grab group names based on "selected_group"
         group_names = create_label_entry(
             parent=options,
             label_text="Group Names:",
             width=20,
-            default_val="Control, Experimental",
+            default_val=default_group_names,
             side="top",
         )
 
@@ -1297,8 +1300,6 @@ def open_spm_tab():
             test_options = [
                 "One-way ANOVA",
                 "One-way Rep. Meas.",
-                "Two-way ANOVA",
-                "Two-way Rep. Meas.",
             ]
             entry_labels, entry_boxes, entry_buttons = create_entry_in(
                 entry_frame, ["Group 1 Data:", "Group 2 Data:", "Group 3 Data:"]
@@ -1311,54 +1312,74 @@ def open_spm_tab():
             entry_labels, entry_boxes, entry_buttons = create_entry_in(
                 entry_frame, ["Select group(s) first!"]
             )
-
         execute_function_button(
             entry_frame,
             "Perform Analysis",
-            lambda: toolbox_spm(
-                entry_boxes,
-                output_box,
-                alpha,
-                equal_var,
-                two_tail,
-                dpi,
-                g1_color,
-                g2_color,
-                plot_x_label,
-                group_names,
+            lambda: tf.spm_analysis(
+                select_a_test=test_dropdown.get(),
+                group_names=group_names.get().split(","),
+                selected_group=selected_group,
+                g1_in=entry_boxes[0].get(),
+                g2_in=entry_boxes[1].get() if len(entry_boxes) > 1 else None,
+                g3_in=entry_boxes[2].get() if len(entry_boxes) > 2 else None,
+                output_path=output_box[0].get(),
+                alpha=alpha.get(),
+                equal_var=equal_var.get(),
+                two_tail=two_tail.get(),
+                dpi=dpi.get(),
+                g1_color=dropdowns[0][1].get(),
+                g2_color=dropdowns[1][1].get() if len(dropdowns) > 1 else None,
+                g3_color=dropdowns[2][1].get() if len(dropdowns) > 2 else None,
+                plot_x_label=plot_x_label.get(),
             ),
         )
+        # execute_function_button(
+        #     entry_frame,
+        #     "Perform Analysis",
+        #     lambda: tf.spm(
+        #         entry_boxes,
+        #         output_box,
+        #         alpha,
+        #         equal_var,
+        #         two_tail,
+        #         dpi,
+        #         g1_color,
+        #         g2_color,
+        #         plot_x_label,
+        #         group_names,
+        #     ),
+        # )
         for button in entry_buttons:
             button.configure(bg="#228B22", cursor="hand2")
         output_button[0].configure(bg="#0047AB", cursor="hand2")
         test_dropdown["values"] = test_options
         test_dropdown.set(test_options[0])
 
-    def toolbox_spm(
-        entry_boxes,
-        output_box,
-        alpha,
-        equal_var,
-        two_tail,
-        dpi,
-        g1_color,
-        g2_color,
-        plot_x_label,
-        group_names,
-    ):
-        bf.spm_2_group(
-            entry_boxes[0].get(),
-            entry_boxes[1].get(),
-            output_box[0].get(),
-            alpha=alpha.get(),
-            equal_var=equal_var.get(),
-            two_tail=two_tail.get(),
-            dpi=int(dpi.get()),
-            g1_color=g1_color.get(),
-            g2_color=g2_color.get(),
-            plot_x_label=plot_x_label.get(),
-            group_names=group_names.get(),
-        )
+    # def toolbox_spm(
+    #     entry_boxes,
+    #     output_box,
+    #     alpha,
+    #     equal_var,
+    #     two_tail,
+    #     dpi,
+    #     g1_color,
+    #     g2_color,
+    #     plot_x_label,
+    #     group_names,
+    # ):
+    #     tf.spm_analysis(
+    #         entry_boxes[0].get(),
+    #         entry_boxes[1].get(),
+    #         output_box[0].get(),
+    #         alpha=alpha.get(),
+    #         equal_var=equal_var.get(),
+    #         two_tail=two_tail.get(),
+    #         dpi=int(dpi.get()),
+    #         g1_color=g1_color.get(),
+    #         g2_color=g2_color.get(),
+    #         plot_x_label=plot_x_label.get(),
+    #         group_names=group_names.get(),
+    #     )
 
     spm_groups, group_dropdown = create_dropdown(
         dropdown_frame, "Groups:", ["1", "2", "3"]
@@ -1494,7 +1515,7 @@ label_configurations = [
         5,
     ),
     (
-        "    1. bf.v3d Script and Model Generation\n    2. EMG Processing\n    3. Batch Processing\n    4. Normalization\n    5. Data Quality Checks\n    6. Event Picking\n    7. Event Compiling\n    8. Ensemble Curves\n    9. SPM Analysis",
+        "    1. tf.v3d Script and Model Generation\n    2. EMG Processing\n    3. Batch Processing\n    4. Normalization\n    5. Data Quality Checks\n    6. Event Picking\n    7. Event Compiling\n    8. Ensemble Curves\n    9. SPM Analysis",
         ("Helvetica", 10),
         None,
         5,

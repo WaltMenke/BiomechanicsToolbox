@@ -23,7 +23,7 @@ except Exception as e:
     pass
 
 
-def v3d_get_vars(
+def get_vars(
     filename: str,
     unique: int = 0,
     trial_num: int = 5,
@@ -82,7 +82,7 @@ def v3d_get_vars(
     return variable_string
 
 
-def v3d_trim(filename: str) -> npt.NDArray:
+def trim_header(filename: str) -> npt.NDArray:
     """This function imports a user-specified V3D output file (full path) and trims the headers, removes
     the first column, and converts the remaining columns to float.
 
@@ -113,7 +113,7 @@ def v3d_trim(filename: str) -> npt.NDArray:
     return file
 
 
-def v3d_generate_scripts(
+def generate_scripts(
     script_template_path: str,
     model_template_path: str,
     heightweight_file: str,
@@ -251,7 +251,7 @@ def v3d_generate_scripts(
         return
 
 
-def v3d_batch(
+def batch(
     input_directory: str,
     search_query: str,
     output_directory: str,
@@ -282,9 +282,9 @@ def v3d_batch(
         Numpy, OS, re, tkinter
 
     SEE ALSO:
-        v3d_batched_reshape
-        v3d_normalize
-        v3d_quality_check
+        batch_reshape
+        normalize
+        quality_check
 
     Created by Walt Menke (2023) - wmenke597@gmail.com
     """
@@ -349,7 +349,7 @@ def v3d_batch(
             check_columns(file_path)
 
         row_check, col_check = None, None
-        var_list = v3d_get_vars(
+        var_list = get_vars(
             os.path.join(input_directory, file_list[0]),
             unique=0,
             trial_num=trial_num,
@@ -364,7 +364,7 @@ def v3d_batch(
                 )  # Creates path to each file
 
                 with open(file_path, "r") as f:  # Opens each file
-                    contents = v3d_trim(file_path)  # Reads each file
+                    contents = trim_header(file_path)  # Reads each file
                 if row_check is None:  # Only proceeds on first iteration
                     row_check = contents.shape[
                         0
@@ -421,7 +421,7 @@ def v3d_batch(
                     input_directory, filename
                 )  # Creates path to each file
                 with open(file_path, "r") as file:  # Opens each file
-                    contents = v3d_trim(file_path)  # Reads each file
+                    contents = trim_header(file_path)  # Reads each file
                     rows = contents.shape[0]  # Sets row check to size of first file
                     cols = (
                         contents.shape[1] if rows > 0 else 0
@@ -442,7 +442,7 @@ def v3d_batch(
             for file in file_list:
                 file_path = os.path.join(input_directory, file)
                 with open(file_path, "r") as f:
-                    contents = v3d_trim(file_path)
+                    contents = trim_header(file_path)
                     if contents.shape[0] != output.shape[0]:
                         add_rows = output.shape[0] - contents.shape[0]
                         contents = np.append(
@@ -486,14 +486,12 @@ def v3d_batch(
         return
 
 
-def v3d_quality_check(
-    batch_input: str, subject_idx: int
-) -> tuple[plt.Figure, plt.Axes]:
-    """This function imports a file from v3d_batch() and graphs them to assess curve quality and identify probelmatic data. This is done by plotting however many variables are in the file divided into 3x3 plots.
+def quality_check(batch_input: str, subject_idx: int) -> tuple[plt.Figure, plt.Axes]:
+    """This function imports a file from batch() and graphs them to assess curve quality and identify probelmatic data. This is done by plotting however many variables are in the file divided into 3x3 plots.
 
     INPUTS:
-        qual_check_in: Output from v3d_batch()
-        subject_idx: Subject number indicating position in batch, starting at 1 (z-axis of v3d_batch output)
+        qual_check_in: Output from batch()
+        subject_idx: Subject number indicating position in batch, starting at 1 (z-axis of batch output)
 
     OUTPUTS:
         plot list of 3x3 subplots, amount depends on number of variables (as in, 18 variables will return two 3x3 plots per subject)
@@ -502,17 +500,15 @@ def v3d_quality_check(
         Matplotlib.pyplot, Numpy, OS
 
     SEE ALSO:
-        v3d_batch
-        v3d_get_vars
+        batch
+        get_vars
 
     Created by Walt Menke (2023) - wmenke597@gmail.com
     """
     try:
         file_in = os.path.basename(batch_input)
         true_file, _ = os.path.splitext(file_in)
-        qual_check_in, var_list, comp_split, comp_list = v3d_batched_reshape(
-            batch_input
-        )
+        qual_check_in, var_list, comp_split, comp_list = batch_reshape(batch_input)
         if qual_check_in.ndim != 3:
             raise ValueError("qual_check_in must be a 3D array.")
         if qual_check_in.shape[1] % len(var_list) != 0:
@@ -586,11 +582,11 @@ def v3d_quality_check(
         return
 
 
-def v3d_batched_reshape(batch_input: str) -> tuple[npt.NDArray, list, list, list]:
-    """This function imports a flattened 3D array from v3d_batch() and returns the reshaped data as a 3D numpy array.
+def batch_reshape(batch_input: str) -> tuple[npt.NDArray, list, list, list]:
+    """This function imports a flattened 3D array from batch() and returns the reshaped data as a 3D numpy array.
 
     INPUTS:
-        batch_input: Output from v3d_batch()
+        batch_input: Output from batch()
 
     OUTPUTS:
         qual_check_in: 3D array of flattened input data
@@ -602,8 +598,8 @@ def v3d_batched_reshape(batch_input: str) -> tuple[npt.NDArray, list, list, list
         Numpy, OS
 
     SEE ALSO:
-        v3d_batch
-        v3d_get_vars
+        batch
+        get_vars
 
     Created by Walt Menke (2023) - wmenke597@gmail.com
     """
@@ -635,11 +631,11 @@ def v3d_batched_reshape(batch_input: str) -> tuple[npt.NDArray, list, list, list
         return
 
 
-def v3d_qual_metadata(batch_input: str) -> int:
-    """This function imports a flattened 3D array from v3d_batch() and returns the subject count.
+def qual_metadata(batch_input: str) -> int:
+    """This function imports a flattened 3D array from batch() and returns the subject count.
 
     INPUTS:
-        batch_input: Output from v3d_batch()
+        batch_input: Output from batch()
 
     OUTPUTS:
         plot_check: Outputs number
@@ -648,8 +644,8 @@ def v3d_qual_metadata(batch_input: str) -> int:
         Numpy, OS
 
     SEE ALSO:
-        v3d_batch
-        v3d_get_vars
+        batch
+        get_vars
 
     Created by Walt Menke (2023) - wmenke597@gmail.com
     """
@@ -667,7 +663,7 @@ def v3d_qual_metadata(batch_input: str) -> int:
             plot_per_sub = len(var_list) % 9
             if not isinstance(plot_per_sub, int):
                 raise ValueError(
-                    "Plot count not valid. Check input from v3d_batch() line 1 to assess shape of array."
+                    "Plot count not valid. Check input from batch() line 1 to assess shape of array."
                 )
             return plot_per_sub, sub_count
     except ValueError as e:
@@ -675,11 +671,11 @@ def v3d_qual_metadata(batch_input: str) -> int:
         return
 
 
-def v3d_normalize(batched_file_location: str, output_file_location: str) -> None:
-    """This function imports a batched output from v3d_batch() and normalizes the data to 101 data points, saving with "_Normalized" appended.
+def normalize(batched_file_location: str, output_file_location: str) -> None:
+    """This function imports a batched output from batch() and normalizes the data to 101 data points, saving with "_Normalized" appended.
 
     INPUTS:
-        batched_file_location: Output from v3d_batch()
+        batched_file_location: Output from batch()
 
     OUTPUTS:
         norm_cube: Normalized data
@@ -688,11 +684,11 @@ def v3d_normalize(batched_file_location: str, output_file_location: str) -> None
         Numpy
 
     SEE ALSO:
-        v3d_batch
+        batch
 
     Created by Walt Menke (2023) - wmenke597@gmail.com
     """
-    data_cube, batched_vars, comp_split, comp_list = v3d_batched_reshape(
+    data_cube, batched_vars, comp_split, comp_list = batch_reshape(
         batched_file_location
     )
     if data_cube.shape[0] == 101:
@@ -754,13 +750,11 @@ def v3d_normalize(batched_file_location: str, output_file_location: str) -> None
             )
 
 
-def v3d_process_cube(
-    norm_cube: str, bool_array: list
-) -> tuple((npt.NDArray, npt.NDArray)):
-    """This function imports a normalized data cube from v3d_normalize() and processes the means and standard deviations for ensemble curve generation.
+def process_cube(norm_cube: str, bool_array: list) -> tuple((npt.NDArray, npt.NDArray)):
+    """This function imports a normalized data cube from normalize() and processes the means and standard deviations for ensemble curve generation.
 
     INPUTS:
-        norm_cube: Output from v3d_normalize()
+        norm_cube: Output from normalize()
         bool_array: Array of booleans denoting which variables to include, the length of which should equal the total variables in the norm_cube
 
     OUTPUTS:
@@ -771,7 +765,7 @@ def v3d_process_cube(
         Numpy
 
     SEE ALSO:
-        v3d_batch
+        batch
 
     Created by Walt Menke (2023) - wmenke597@gmail.com
     """
@@ -810,7 +804,7 @@ def v3d_process_cube(
     return processed_means, processed_std
 
 
-def v3d_ensemble_plot(
+def ensemble_plot(
     mean_array: npt.NDArray,
     std_array: npt.NDArray,
     mean_color: str = "black",
@@ -824,8 +818,8 @@ def v3d_ensemble_plot(
     """This function generates ensemble plots from normalized data and returns figure and axes objects as a tuple.
 
     INPUTS:
-        mean_array: First output from v3d_process_cube()
-        std_array: Second output from v3d_process_cube()
+        mean_array: First output from process_cube()
+        std_array: Second output from process_cube()
         mean_color: Color of the mean line
         std_color: Color of the standard deviation line
         title: Title of the plot
@@ -842,7 +836,7 @@ def v3d_ensemble_plot(
         Numpy, Matplotlib.pyplot, SciencePlots (optional)
 
     SEE ALSO:
-        v3d_batch
+        batch
 
     Created by Walt Menke (2023) - wmenke597@gmail.com
     """
@@ -907,20 +901,175 @@ def v3d_ensemble_plot(
     return fig, ax
 
 
-def spm_2_group(
+# def spm_2_group(
+#     g1_in: str,
+#     g2_in: str,
+#     output_path: str,
+#     alpha: float = 0.05,
+#     equal_var: bool = False,
+#     two_tail: bool = True,
+#     dpi: int = 300,
+#     g1_color: str = "black",
+#     g2_color: str = "blue",
+#     plot_x_label: str = None,
+#     group_names: list = ["Control", "Experimental"],
+# ) -> None:
+#     """This function perform a 2-group Statistical Parametric Mapping analysis with multiple arguments for customization.
+
+#     INPUTS:
+#         g1_in: Path to the first group data cube
+#         g2_in: Path to the second group data cube
+#         output_path: Path to the output directory
+#         alpha (optional): Significance level
+#         two_tail (optional): Whether to use the two-tailed or one-tailed test
+#         equal_var (optional): Whether to assume equal variances
+#         dpi (optional): Number of dots per inch for individual .TIFF plots
+#         g1_color (optional): Color of the first group
+#         g2_color (optional): Color of the second group
+#         plot_x_label (optional): Label for the x-axis
+#         group_names (optional): Names of the groups for the legend, as in ["Control", "Experimental"]
+
+#     OUTPUTS:
+#         .TIFF file SPM plots for each variable in the original data cube
+
+#     DEPENDENCIES:
+#         Numpy
+
+#     SEE ALSO:
+#         batch
+
+#     Created by Walt Menke (2023) - wmenke597@gmail.com
+#     """
+#     try:
+#         norm_cube_1, var_list_1, _, comp_list_1 = batch_reshape(g1_in)
+#         norm_cube_2, var_list_2, _, comp_list_2 = batch_reshape(g2_in)
+#         if comp_list_1 != comp_list_2:
+#             raise ValueError("Cubes have different number of components.")
+#         else:
+#             xyz_list = comp_list_1
+
+#         if var_list_1 != var_list_2:
+#             stripped_lists = [
+#                 (
+#                     var1.replace("Right", "").replace("Left", ""),
+#                     var2.replace("Right", "").replace("Left", ""),
+#                 )
+#                 for var1, var2 in zip(var_list_1, var_list_2)
+#             ]
+
+#             true_var_list1, _ = zip(*stripped_lists)
+#             var_list = true_var_list1
+#         else:
+#             var_list = var_list_1
+
+#         if len(var_list) % len(xyz_list) != 0:
+#             raise ValueError(
+#                 "Number of variables not divisible by number of components."
+#             )
+
+#         raw_var_list = [
+#             f"{original} {xyz}"
+#             for original, xyz in zip(
+#                 var_list, xyz_list * (len(var_list) // len(xyz_list) + 1)
+#             )
+#         ]
+#         true_var_list = [
+#             "".join(
+#                 [
+#                     " " + char
+#                     if char.isupper() and i > 0 and raw_var_list[idx][i - 1].islower()
+#                     else char
+#                     for i, char in enumerate(word)
+#                 ]
+#             )
+#             for idx, word in enumerate(raw_var_list)
+#         ]
+
+#         group_names = [name.strip() for name in group_names.split(",")]
+
+#         output_dir = output_path
+#         pdf_out = os.path.join(output_dir, "All_SPM_Plots.pdf")
+
+#         with PdfPages(pdf_out) as pdf:
+#             tiff_path = os.path.join(output_dir, f"{true_var_list[0]}.tiff")
+#             if os.path.exists(tiff_path):
+#                 response = messagebox.askyesno(
+#                     "File Already Exists",
+#                     f"It looks like the .TIFF files already exist. Do you want to overwrite them?",
+#                 )
+#                 if not response:
+#                     return
+#             for i in range(0, len(true_var_list)):
+#                 t = spm1d.stats.ttest2(
+#                     norm_cube_1[:, i, :].T, norm_cube_2[:, i, :].T, equal_var=equal_var
+#                 )
+#                 ti = t.inference(alpha=float(alpha), two_tailed=two_tail)
+
+#                 fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+#                 plt.subplots_adjust(left=0.1, right=0.95, bottom=0.2, hspace=0.4)
+
+#                 ax = axes[0]
+#                 spm1d.plot.plot_mean_sd(
+#                     norm_cube_1[:, i, :].T,
+#                     linecolor=g1_color,
+#                     facecolor=g1_color,
+#                     ax=ax,
+#                     label=group_names[0],
+#                 )
+#                 spm1d.plot.plot_mean_sd(
+#                     norm_cube_2[:, i, :].T,
+#                     linecolor=g2_color,
+#                     facecolor=g2_color,
+#                     ax=ax,
+#                     label=group_names[1],
+#                 )
+#                 ax.axhline(y=0, color="k", linestyle=":")
+#                 ax.set_xlabel(plot_x_label)
+#                 ax.set_title(f"{true_var_list[i]}")
+
+#                 ax = axes[1]
+#                 ti.plot(ax=ax)
+#                 ti.plot_threshold_label(fontsize=10, ax=ax)
+#                 ti.plot_p_values(size=12, offset_all_clusters=(0, 0.3), ax=ax)
+#                 ax.set_xlabel(plot_x_label)
+
+#                 fig.legend(
+#                     loc="lower center",
+#                     bbox_to_anchor=(0.3, 0),
+#                     fontsize=10,
+#                     ncols=2,
+#                 )
+
+#                 tiff_path = os.path.join(output_dir, f"{true_var_list[i]}.tiff")
+#                 plt.savefig(tiff_path, dpi=dpi)
+#                 pdf.savefig()
+
+
+#                 plt.close()
+#         tk.messagebox.showinfo(
+#             "Save Complete", f"All SPM plots have been saved here: {output_dir}"
+#         )
+#     except ValueError as e:
+#         tk.messagebox.showerror("Value Error", str(e))
+#         return
+def spm_analysis(
+    select_a_test: str,
+    group_names: list,
+    selected_group: str,
     g1_in: str,
-    g2_in: str,
-    output_path: str,
+    g2_in: str = None,
+    g3_in: str = None,
+    output_path: str = None,
     alpha: float = 0.05,
     equal_var: bool = False,
     two_tail: bool = True,
     dpi: int = 300,
     g1_color: str = "black",
     g2_color: str = "blue",
+    g3_color: str = "red",
     plot_x_label: str = None,
-    group_names: list = ["Control", "Experimental"],
 ) -> None:
-    """This function perform a 2-group Statistical Parametric Mapping analysis with multiple arguments for customization.
+    """This function perform a Statistical Parametric Mapping analysis with multiple arguments for customization.
 
     INPUTS:
         g1_in: Path to the first group data cube
@@ -939,44 +1088,64 @@ def spm_2_group(
         .TIFF file SPM plots for each variable in the original data cube
 
     DEPENDENCIES:
-        Numpy
+        Numpy, spm1d
 
     SEE ALSO:
         v3d_batch
 
     Created by Walt Menke (2023) - wmenke597@gmail.com
     """
+    test_options = {
+        "One-sample t test": spm1d.stats.ttest,
+        "Paired t test": spm1d.stats.ttest_paired,
+        "Two-sample t test": spm1d.stats.ttest2,
+        "One-way ANOVA": spm1d.stats.anova1,
+        "One-way Rep. Meas.": spm1d.stats.anova1rm,
+    }
+    selected_test = test_options[select_a_test]
+    group_count = int(selected_group)
+    norm_cubes = []
+    var_list = []
+    comp_list = []
+
     try:
-        norm_cube_1, var_list_1, _, comp_list_1 = v3d_batched_reshape(g1_in)
-        norm_cube_2, var_list_2, _, comp_list_2 = v3d_batched_reshape(g2_in)
-        if comp_list_1 != comp_list_2:
-            raise ValueError("Cubes have different number of components.")
-        else:
-            xyz_list = comp_list_1
-
-        if var_list_1 != var_list_2:
-            stripped_lists = [
-                (
-                    var1.replace("Right", "").replace("Left", ""),
-                    var2.replace("Right", "").replace("Left", ""),
+        for group in range(1, group_count + 1):
+            group_exists = f"g{group}_in"
+            if group_exists in locals() and locals()[group_exists] is not None:
+                group_norm_cube, group_var_list, _, group_comp_list = batch_reshape(
+                    locals()[f"g{group}_in"]
                 )
-                for var1, var2 in zip(var_list_1, var_list_2)
-            ]
+                stripped_lists = [
+                    (var.replace("Right", "").replace("Left", ""))
+                    for var in group_var_list
+                ]
 
-            true_var_list1, _ = zip(*stripped_lists)
-            var_list = true_var_list1
-        else:
-            var_list = var_list_1
+                if len(group_var_list) % len(group_comp_list) != 0:
+                    raise ValueError(
+                        "Number of variables not divisible by the number of components."
+                    )
 
-        if len(var_list) % len(xyz_list) != 0:
-            raise ValueError(
-                "Number of variables not divisible by number of components."
-            )
+                norm_cubes.append(group_norm_cube)
+
+                # if var_list and var_list != group_var_list:
+                #     raise ValueError("Inconsistent variables/trials across groups.")
+                # if comp_list and comp_list != group_comp_list:
+                #     raise ValueError("Inconsistent components across groups.")
+
+                # if not var_list:
+                #     var_list.extend(group_var_list)
+                #     comp_list.extend(group_comp_list)
+                var_list = group_var_list
+                comp_list = group_comp_list
+
+        cube_shape_check = norm_cubes[0].shape
+        if any(cube.shape != cube_shape_check for cube in norm_cubes):
+            raise ValueError("Inconsistent norm_cubes shapes across iterations")
 
         raw_var_list = [
             f"{original} {xyz}"
             for original, xyz in zip(
-                var_list, xyz_list * (len(var_list) // len(xyz_list) + 1)
+                var_list, comp_list * (len(var_list) // len(comp_list) + 1)
             )
         ]
         true_var_list = [
@@ -990,10 +1159,10 @@ def spm_2_group(
             )
             for idx, word in enumerate(raw_var_list)
         ]
-
-        group_names = [name.strip() for name in group_names.split(",")]
+        # group_names = [name.strip() for name in group_names.split(",")]
 
         output_dir = output_path
+        print(f"output_path: {output_path}")
         pdf_out = os.path.join(output_dir, "All_SPM_Plots.pdf")
 
         with PdfPages(pdf_out) as pdf:
@@ -1006,54 +1175,64 @@ def spm_2_group(
                 if not response:
                     return
             for i in range(0, len(true_var_list)):
-                t = spm1d.stats.ttest2(
-                    norm_cube_1[:, i, :].T, norm_cube_2[:, i, :].T, equal_var=equal_var
-                )
-                ti = t.inference(alpha=float(alpha), two_tailed=two_tail)
+                if selected_group == "1":
+                    t = selected_test(norm_cubes[0][:, i, :].T, equal_var=equal_var)
+                elif selected_group == "2":
+                    t = selected_test(
+                        *([norm_cube[:, i, :].T for norm_cube in norm_cubes]),
+                        equal_var=equal_var,
+                    )
+                elif selected_group == "3":
+                    t = selected_test(
+                        *([norm_cube[:, i, :].T for norm_cube in norm_cubes]),
+                        equal_var=equal_var,
+                    )
+            ti = t.inference(alpha=float(alpha), two_tailed=two_tail)
+            messagebox.showinfo(
+                "SPM",
+                f"You chose the following {selected_group} Group test: {select_a_test} with alpha={alpha} and two_tail={two_tail}.",
+            )
+            # fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+            # plt.subplots_adjust(left=0.1, right=0.95, bottom=0.2, hspace=0.4)
 
-                fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-                plt.subplots_adjust(left=0.1, right=0.95, bottom=0.2, hspace=0.4)
+            # ax = axes[0]
+            # num_groups = int(selected_group)
 
-                ax = axes[0]
-                spm1d.plot.plot_mean_sd(
-                    norm_cube_1[:, i, :].T,
-                    linecolor=g1_color,
-                    facecolor=g1_color,
-                    ax=ax,
-                    label=group_names[0],
-                )
-                spm1d.plot.plot_mean_sd(
-                    norm_cube_2[:, i, :].T,
-                    linecolor=g2_color,
-                    facecolor=g2_color,
-                    ax=ax,
-                    label=group_names[1],
-                )
-                ax.axhline(y=0, color="k", linestyle=":")
-                ax.set_xlabel(plot_x_label)
-                ax.set_title(f"{true_var_list[i]}")
+            # for group_num in range(1, num_groups + 1):
+            #     data = globals()[f"norm_cube_{group_num}"][:, i, :].T
+            #     line_color = globals()[f"g{group_num}_color"]
+            #     spm1d.plot.plot_mean_sd(
+            #         data,
+            #         linecolor=line_color,
+            #         facecolor=line_color,
+            #         ax=ax,
+            #         label=group_names[group_num - 1],
+            #     )
+            # ax.axhline(y=0, color="k", linestyle=":")
+            # ax.set_xlabel(plot_x_label)
+            # ax.set_title(f"{true_var_list[i]}")
 
-                ax = axes[1]
-                ti.plot(ax=ax)
-                ti.plot_threshold_label(fontsize=10, ax=ax)
-                ti.plot_p_values(size=12, offset_all_clusters=(0, 0.3), ax=ax)
-                ax.set_xlabel(plot_x_label)
+            # ax = axes[1]
+            # ti.plot(ax=ax)
+            # ti.plot_threshold_label(fontsize=10, ax=ax)
+            # ti.plot_p_values(size=12, offset_all_clusters=(0, 0.3), ax=ax)
+            # ax.set_xlabel(plot_x_label)
 
-                fig.legend(
-                    loc="lower center",
-                    bbox_to_anchor=(0.3, 0),
-                    fontsize=10,
-                    ncols=2,
-                )
+            # fig.legend(
+            #     loc="lower center",
+            #     bbox_to_anchor=(0.3, 0),
+            #     fontsize=10,
+            #     ncols=2,
+            # )
 
-                tiff_path = os.path.join(output_dir, f"{true_var_list[i]}.tiff")
-                plt.savefig(tiff_path, dpi=dpi)
-                pdf.savefig()
+            # tiff_path = os.path.join(output_dir, f"{true_var_list[i]}.tiff")
+            # plt.savefig(tiff_path, dpi=dpi)
+            # pdf.savefig()
 
-                plt.close()
-        tk.messagebox.showinfo(
-            "Save Complete", f"All SPM plots have been saved here: {output_dir}"
-        )
+            # plt.close()
+        # tk.messagebox.showinfo(
+        #     "Save Complete", f"All SPM plots have been saved here: {output_dir}"
+        # )
     except ValueError as e:
         tk.messagebox.showerror("Value Error", str(e))
         return
