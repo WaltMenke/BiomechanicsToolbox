@@ -901,157 +901,6 @@ def ensemble_plot(
     return fig, ax
 
 
-# def spm_2_group(
-#     g1_in: str,
-#     g2_in: str,
-#     output_path: str,
-#     alpha: float = 0.05,
-#     equal_var: bool = False,
-#     two_tail: bool = True,
-#     dpi: int = 300,
-#     g1_color: str = "black",
-#     g2_color: str = "blue",
-#     plot_x_label: str = None,
-#     group_names: list = ["Control", "Experimental"],
-# ) -> None:
-#     """This function perform a 2-group Statistical Parametric Mapping analysis with multiple arguments for customization.
-
-#     INPUTS:
-#         g1_in: Path to the first group data cube
-#         g2_in: Path to the second group data cube
-#         output_path: Path to the output directory
-#         alpha (optional): Significance level
-#         two_tail (optional): Whether to use the two-tailed or one-tailed test
-#         equal_var (optional): Whether to assume equal variances
-#         dpi (optional): Number of dots per inch for individual .TIFF plots
-#         g1_color (optional): Color of the first group
-#         g2_color (optional): Color of the second group
-#         plot_x_label (optional): Label for the x-axis
-#         group_names (optional): Names of the groups for the legend, as in ["Control", "Experimental"]
-
-#     OUTPUTS:
-#         .TIFF file SPM plots for each variable in the original data cube
-
-#     DEPENDENCIES:
-#         Numpy
-
-#     SEE ALSO:
-#         batch
-
-#     Created by Walt Menke (2023) - wmenke597@gmail.com
-#     """
-#     try:
-#         norm_cube_1, var_list_1, _, comp_list_1 = batch_reshape(g1_in)
-#         norm_cube_2, var_list_2, _, comp_list_2 = batch_reshape(g2_in)
-#         if comp_list_1 != comp_list_2:
-#             raise ValueError("Cubes have different number of components.")
-#         else:
-#             xyz_list = comp_list_1
-
-#         if var_list_1 != var_list_2:
-#             stripped_lists = [
-#                 (
-#                     var1.replace("Right", "").replace("Left", ""),
-#                     var2.replace("Right", "").replace("Left", ""),
-#                 )
-#                 for var1, var2 in zip(var_list_1, var_list_2)
-#             ]
-
-#             true_var_list1, _ = zip(*stripped_lists)
-#             var_list = true_var_list1
-#         else:
-#             var_list = var_list_1
-
-#         if len(var_list) % len(xyz_list) != 0:
-#             raise ValueError(
-#                 "Number of variables not divisible by number of components."
-#             )
-
-#         raw_var_list = [
-#             f"{original} {xyz}"
-#             for original, xyz in zip(
-#                 var_list, xyz_list * (len(var_list) // len(xyz_list) + 1)
-#             )
-#         ]
-#         true_var_list = [
-#             "".join(
-#                 [
-#                     " " + char
-#                     if char.isupper() and i > 0 and raw_var_list[idx][i - 1].islower()
-#                     else char
-#                     for i, char in enumerate(word)
-#                 ]
-#             )
-#             for idx, word in enumerate(raw_var_list)
-#         ]
-
-#         group_names = [name.strip() for name in group_names.split(",")]
-
-#         output_dir = output_path
-#         pdf_out = os.path.join(output_dir, "All_SPM_Plots.pdf")
-
-#         with PdfPages(pdf_out) as pdf:
-#             tiff_path = os.path.join(output_dir, f"{true_var_list[0]}.tiff")
-#             if os.path.exists(tiff_path):
-#                 response = messagebox.askyesno(
-#                     "File Already Exists",
-#                     f"It looks like the .TIFF files already exist. Do you want to overwrite them?",
-#                 )
-#                 if not response:
-#                     return
-#             for i in range(0, len(true_var_list)):
-#                 t = spm1d.stats.ttest2(
-#                     norm_cube_1[:, i, :].T, norm_cube_2[:, i, :].T, equal_var=equal_var
-#                 )
-#                 ti = t.inference(alpha=float(alpha), two_tailed=two_tail)
-
-#                 fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-#                 plt.subplots_adjust(left=0.1, right=0.95, bottom=0.2, hspace=0.4)
-
-#                 ax = axes[0]
-#                 spm1d.plot.plot_mean_sd(
-#                     norm_cube_1[:, i, :].T,
-#                     linecolor=g1_color,
-#                     facecolor=g1_color,
-#                     ax=ax,
-#                     label=group_names[0],
-#                 )
-#                 spm1d.plot.plot_mean_sd(
-#                     norm_cube_2[:, i, :].T,
-#                     linecolor=g2_color,
-#                     facecolor=g2_color,
-#                     ax=ax,
-#                     label=group_names[1],
-#                 )
-#                 ax.axhline(y=0, color="k", linestyle=":")
-#                 ax.set_xlabel(plot_x_label)
-#                 ax.set_title(f"{true_var_list[i]}")
-
-#                 ax = axes[1]
-#                 ti.plot(ax=ax)
-#                 ti.plot_threshold_label(fontsize=10, ax=ax)
-#                 ti.plot_p_values(size=12, offset_all_clusters=(0, 0.3), ax=ax)
-#                 ax.set_xlabel(plot_x_label)
-
-#                 fig.legend(
-#                     loc="lower center",
-#                     bbox_to_anchor=(0.3, 0),
-#                     fontsize=10,
-#                     ncols=2,
-#                 )
-
-#                 tiff_path = os.path.join(output_dir, f"{true_var_list[i]}.tiff")
-#                 plt.savefig(tiff_path, dpi=dpi)
-#                 pdf.savefig()
-
-
-#                 plt.close()
-#         tk.messagebox.showinfo(
-#             "Save Complete", f"All SPM plots have been saved here: {output_dir}"
-#         )
-#     except ValueError as e:
-#         tk.messagebox.showerror("Value Error", str(e))
-#         return
 def spm_analysis(
     select_a_test: str,
     group_names: list,
@@ -1068,6 +917,7 @@ def spm_analysis(
     g2_color: str = "blue",
     g3_color: str = "red",
     plot_x_label: str = None,
+    plot_y_labels: str = None,
 ) -> None:
     """This function perform a Statistical Parametric Mapping analysis with multiple arguments for customization.
 
@@ -1107,8 +957,32 @@ def spm_analysis(
     norm_cubes = []
     var_list = []
     comp_list = []
+    if plot_y_labels is None or plot_y_labels == [] or plot_y_labels == "":
+        result = messagebox.askyesno(
+            "Warning",
+            "No plot Y-labels provided. Do you want to continue with no labels?",
+        )
+        if not result:
+            return
+        else:
+            plot_y_labels = None
+    else:
+        plot_y_labels = pd.read_excel(plot_y_labels, header=None)
 
     try:
+        if any(path is None or path == "" for path in (g1_in, g2_in, g3_in)):
+            raise ValueError("One or more input file paths are not specified.")
+        if output_path is None or output_path == "":
+            raise ValueError("Output directory path is not specified.")
+        if not any(os.path.exists(path) for path in (g1_in, g2_in, g3_in)):
+            raise FileNotFoundError("One or more input files do not exist.")
+        if not os.path.exists(output_path):
+            raise FileNotFoundError("Output directory does not exist.")
+        if 0 > alpha < 1:
+            raise ValueError("Significance level must be between 0 and 1.")
+        if 299 > dpi < 801:
+            raise ValueError("DPI value must be greater than 300 and less than 800.")
+
         for group in range(1, group_count + 1):
             group_exists = f"g{group}_in"
             if group_exists in locals() and locals()[group_exists] is not None:
@@ -1124,24 +998,24 @@ def spm_analysis(
                     raise ValueError(
                         "Number of variables not divisible by the number of components."
                     )
+                if len(group_var_list) != len(plot_y_labels):
+                    raise ValueError(
+                        "Number of variables not equal to number of plot Y-labels."
+                    )
 
                 norm_cubes.append(group_norm_cube)
-
-                # if var_list and var_list != group_var_list:
-                #     raise ValueError("Inconsistent variables/trials across groups.")
-                # if comp_list and comp_list != group_comp_list:
-                #     raise ValueError("Inconsistent components across groups.")
-
-                # if not var_list:
-                #     var_list.extend(group_var_list)
-                #     comp_list.extend(group_comp_list)
-                var_list = group_var_list
+                var_list = stripped_lists
                 comp_list = group_comp_list
 
         cube_shape_check = norm_cubes[0].shape
         if any(cube.shape != cube_shape_check for cube in norm_cubes):
-            raise ValueError("Inconsistent norm_cubes shapes across iterations")
-
+            raise ValueError(
+                "Inconsistent norm_cubes shapes across iterations. Check all group(s) input data shape."
+            )
+        if any(cube.shape[0] != 101 for cube in norm_cubes):
+            raise ValueError(
+                "Data for the SPM functions must be normalized to 101 points. Check all group(s) input data shape."
+            )
         raw_var_list = [
             f"{original} {xyz}"
             for original, xyz in zip(
@@ -1159,10 +1033,8 @@ def spm_analysis(
             )
             for idx, word in enumerate(raw_var_list)
         ]
-        # group_names = [name.strip() for name in group_names.split(",")]
 
         output_dir = output_path
-        print(f"output_path: {output_path}")
         pdf_out = os.path.join(output_dir, "All_SPM_Plots.pdf")
 
         with PdfPages(pdf_out) as pdf:
@@ -1175,64 +1047,72 @@ def spm_analysis(
                 if not response:
                     return
             for i in range(0, len(true_var_list)):
-                if selected_group == "1":
-                    t = selected_test(norm_cubes[0][:, i, :].T, equal_var=equal_var)
-                elif selected_group == "2":
+                if selected_test == spm1d.stats.ttest_paired:
+                    t = selected_test(
+                        *([norm_cube[:, i, :].T for norm_cube in norm_cubes]),
+                    )  # no equal variance for this test
+                elif selected_test == spm1d.stats.anova1:
+                    t = spm1d.stats.anova1(
+                        tuple(norm_cube[:, i, :].T for norm_cube in norm_cubes),
+                        equal_var=equal_var,
+                    )  # test requires groups to be in a tuple
+                else:
                     t = selected_test(
                         *([norm_cube[:, i, :].T for norm_cube in norm_cubes]),
                         equal_var=equal_var,
+                    )  # all other (current) tests
+                if selected_test == spm1d.stats.anova1:
+                    ti = t.inference(
+                        alpha=float(alpha)
+                    )  # no two_tailed for one way ANOVA
+                else:
+                    ti = t.inference(alpha=float(alpha), two_tailed=two_tail)
+
+                fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+                plt.subplots_adjust(left=0.1, right=0.95, bottom=0.2, hspace=0.4)
+
+                ax = axes[0]
+                for group_num, norm_cube in enumerate(norm_cubes, start=1):
+                    data = norm_cube[:, i, :].T
+                    line_color = locals()[f"g{group_num}_color"]
+                    spm1d.plot.plot_mean_sd(
+                        data,
+                        linecolor=line_color,
+                        facecolor=line_color,
+                        ax=ax,
+                        label=group_names[group_num - 1],
                     )
-                elif selected_group == "3":
-                    t = selected_test(
-                        *([norm_cube[:, i, :].T for norm_cube in norm_cubes]),
-                        equal_var=equal_var,
-                    )
-            ti = t.inference(alpha=float(alpha), two_tailed=two_tail)
-            messagebox.showinfo(
-                "SPM",
-                f"You chose the following {selected_group} Group test: {select_a_test} with alpha={alpha} and two_tail={two_tail}.",
-            )
-            # fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-            # plt.subplots_adjust(left=0.1, right=0.95, bottom=0.2, hspace=0.4)
+                ax.axhline(y=0, color="k", linestyle=":")
+                ax.set_xlabel(plot_x_label)
+                if not plot_y_labels == None:
+                    ax.set_ylabel(plot_y_labels.iloc[i, 0])
+                ax.set_title(f"{true_var_list[i]}")
 
-            # ax = axes[0]
-            # num_groups = int(selected_group)
+                ax = axes[1]
+                ti.plot(ax=ax)
+                ti.plot_threshold_label(fontsize=10, ax=ax)
+                ti.plot_p_values(size=12, offset_all_clusters=(0, 0.3), ax=ax)
+                ax.set_xlabel(plot_x_label)
 
-            # for group_num in range(1, num_groups + 1):
-            #     data = globals()[f"norm_cube_{group_num}"][:, i, :].T
-            #     line_color = globals()[f"g{group_num}_color"]
-            #     spm1d.plot.plot_mean_sd(
-            #         data,
-            #         linecolor=line_color,
-            #         facecolor=line_color,
-            #         ax=ax,
-            #         label=group_names[group_num - 1],
-            #     )
-            # ax.axhline(y=0, color="k", linestyle=":")
-            # ax.set_xlabel(plot_x_label)
-            # ax.set_title(f"{true_var_list[i]}")
+                fig.legend(
+                    loc="lower center",
+                    bbox_to_anchor=(0.3, 0),
+                    fontsize=10,
+                    ncols=int(selected_group),
+                )
 
-            # ax = axes[1]
-            # ti.plot(ax=ax)
-            # ti.plot_threshold_label(fontsize=10, ax=ax)
-            # ti.plot_p_values(size=12, offset_all_clusters=(0, 0.3), ax=ax)
-            # ax.set_xlabel(plot_x_label)
+                tiff_path = os.path.join(output_dir, f"{true_var_list[i]}.tiff")
+                plt.savefig(tiff_path, dpi=int(dpi))
+                pdf.savefig()
 
-            # fig.legend(
-            #     loc="lower center",
-            #     bbox_to_anchor=(0.3, 0),
-            #     fontsize=10,
-            #     ncols=2,
-            # )
-
-            # tiff_path = os.path.join(output_dir, f"{true_var_list[i]}.tiff")
-            # plt.savefig(tiff_path, dpi=dpi)
-            # pdf.savefig()
-
-            # plt.close()
-        # tk.messagebox.showinfo(
-        #     "Save Complete", f"All SPM plots have been saved here: {output_dir}"
-        # )
+                plt.close()
+        tk.messagebox.showinfo(
+            "Save Complete",
+            f"SPM conducted with the following parameters:\n\nGroup(s): {selected_group}\nTest: {selected_test.__name__}\nEqual Variance: {equal_var}\nAlpha: {alpha}\nTwo Tailed: {two_tail}\n\nAll plots have been saved here: {output_dir}",
+        )
     except ValueError as e:
         tk.messagebox.showerror("Value Error", str(e))
+        return
+    except FileNotFoundError as e:
+        tk.messagebox.showerror("File Not Found Error", str(e))
         return
