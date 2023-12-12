@@ -1422,7 +1422,7 @@ def open_spm_tab():
 
 def return_to_main(main_tab):
     if not main_tab.tabs():
-        messagebox.showinfo("No Tabs Open", "No tabs are currently open.")
+        messagebox.showerror("No Tabs Open", "No tabs are currently open.")
         return
     result = messagebox.askyesno(
         "Main Tab", "Do you want to close all tabs?", icon="question"
@@ -1547,7 +1547,7 @@ def load_params(tab_name):
             if tab_text in load_functions and tab_id == selected_tab:
                 load_functions[tab_text]()
     except ttk.TclError:
-        messagebox.showinfo(
+        messagebox.showerror(
             "Save Failed", "No tabs open. Please open a tab and try again."
         )
         return
@@ -1577,6 +1577,8 @@ def load_scriptgen():
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
     )
+    if not param_file:
+        return
     entry_mapping = {
         "Script Template File": script_entry,
         "Model Template File": model_entry,
@@ -1623,6 +1625,8 @@ def load_batch():
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
     )
+    if not param_file:
+        return
     entry_mapping = {
         "V3D Data Inputs": batch_in_entry,
         "Output Directory": batch_out_entry,
@@ -1666,7 +1670,8 @@ def load_normalize():
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
     )
-
+    if not param_file:
+        return
     entry_mapping = {"Batched Data File": norm_in, "Output Directory": norm_out}
     with open(param_file, "r") as file:
         for line in file:
@@ -1702,7 +1707,8 @@ def load_qualitycheck():
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
     )
-
+    if not param_file:
+        return
     entry_mapping = {
         "Batched Data Input Directory": qual_in,
         "Subject Numbers": qual_subs,
@@ -1747,6 +1753,8 @@ def load_ensemble():
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
     )
+    if not param_file:
+        return
     entry_mapping = {
         "Normalized Data File": ensemble_in,
         "Output Directory": ensemble_out,
@@ -1842,6 +1850,8 @@ def load_spm():
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
     )
+    if not param_file:
+        return
     entry_mapping = {
         "Groups": group_dropdown,
         "Available Tests": test_dropdown,
@@ -1878,8 +1888,8 @@ def load_spm():
                             entry_boxes[index].delete(0, tk.END)
                             entry_boxes[index].insert(0, param_value)
                         except IndexError:
-                            messagebox.showwarning(
-                                "Warning",
+                            messagebox.showerror(
+                                "Error",
                                 "Group selected was fewer than specified in the parameters! Re-select group and try again.",
                             )
                             return
@@ -1895,12 +1905,32 @@ def load_spm():
                 else:
                     entry_mapping[param_name].set(param_value)
     if index_str != selected_group:
-        messagebox.showwarning(
-            "Warning",
+        messagebox.showerror(
+            "Error",
             "Group selected was larger than specified in the parameters! Re-select group and try again.",
         )
         return
     messagebox.showinfo("Load Successful", "SPM tab parameters loaded!")
+
+
+def handle_save_params():
+    try:
+        save_params(main_tab.tab(main_tab.select(), "text"))
+    except Exception:
+        messagebox.showerror(
+            "Save Failed",
+            "Cannot save tab parameters without a tab open. Please open a tab and try again.",
+        )
+
+
+def handle_load_params():
+    try:
+        load_params(main_tab.tab(main_tab.select(), "text"))
+    except Exception as e:
+        messagebox.showerror(
+            "Load Failed",
+            "Cannot load tab parameters without a tab open. Please open a tab and try again.",
+        )
 
 
 ##################### Main Menu Creation ######################
@@ -1920,18 +1950,26 @@ def add_menu_items(menu, items):
         menu.add_command(label=label, command=command)
 
 
+def close_current_tab():
+    if not main_tab.tabs():
+        messagebox.showerror("No Tabs Open", "No tabs are currently open.")
+        return
+    main_tab.forget(main_tab.select())
+
+
 file_menu_items = {
     "Reset Tab Entries": lambda: reset_tab(main_tab.tab(main_tab.select(), "text")),
-    "Close Current Tab": lambda: main_tab.forget(main_tab.select()),
+    "Close Current Tab": lambda: close_current_tab(),
     "Close All Tabs": lambda: return_to_main(main_tab),
     "Restart": restart_program,
     "Exit": exit_application,
 }
 
 parameter_menu_items = {
-    "Save Tab Params": lambda: save_params(main_tab.tab(main_tab.select(), "text")),
-    "Load Tab Params": lambda: load_params(main_tab.tab(main_tab.select(), "text")),
+    "Save Tab Params": lambda: handle_save_params(),
+    "Load Tab Params": lambda: handle_load_params(),
 }
+
 
 functions_menu_items = {
     "Script Gen": open_scriptgen_tab,
@@ -1970,7 +2008,7 @@ label_configurations = [
         5,
     ),
     (
-        "    1. V3d Script and Model Generation\n    2. EMG Processing\n    3. Batch Processing\n    4. Normalization\n    5. Data Quality Checks\n    6. Event Picking\n    7. Event Compiling\n    8. Ensemble Curves\n    9. SPM Analysis",
+        "    1. V3D Script and Model Generation\n    2. EMG Processing\n    3. Batch Processing\n    4. Normalization\n    5. Data Quality Checks\n    6. Event Picking\n    7. Event Compiling\n    8. Ensemble Curves\n    9. SPM Analysis",
         ("Helvetica", 10),
         None,
         5,
