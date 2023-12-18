@@ -174,14 +174,14 @@ def open_scriptgen_tab():
         if not script_entry.get().endswith(".v3s"):
             messagebox.showerror(
                 "Input Error",
-                f"Script file is '{script_entry.get()}'. Please enter the path to the tf.v3d pipeline file (.v3s).",
+                f"Script file is '{script_entry.get()}'. Please enter the path to the V3D pipeline file (.v3s).",
                 icon="error",
             )
             return
         if not model_entry.get().endswith(".mdh"):
             messagebox.showerror(
                 "Input Error",
-                f"Model file is '{model_entry.get()}'. Please enter the path to the tf.v3d model file (.mdh).",
+                f"Model file is '{model_entry.get()}'. Please enter the path to the V3D model file (.mdh).",
                 icon="error",
             )
             return
@@ -203,7 +203,7 @@ def open_scriptgen_tab():
         script_direc = filedialog.askopenfilename(
             title="Select Script Template",
             multiple=False,
-            filetypes=(("tf.v3d Pipeline", "*.v3s"),),
+            filetypes=(("V3D Pipeline", "*.v3s"),),
         )
         if not script_direc:
             return
@@ -214,7 +214,7 @@ def open_scriptgen_tab():
         model_direc = filedialog.askopenfilename(
             title="Select Model Template",
             multiple=False,
-            filetypes=(("tf.v3d Model", "*.mdh"),),
+            filetypes=(("V3D Model", "*.mdh"),),
         )
         if not model_direc:
             return
@@ -296,7 +296,7 @@ def open_batch_tab():
     main_tab.select(batch_tab)
     batch_label = tk.Label(
         batch_tab,
-        text="This function creates a 3D NumPy array of data points (dimension 1), variables and trials (dimension 2),\nand subjects (dimension 3) from a list of tf.v3d output files for event picking or quality checking.\n\nNote: Non-normalized inputs (default) will have rows equal to the largest row amount across all files.\nNaN will fill extra spaces in other trials.",
+        text="This function creates a 3D NumPy array of data points (dimension 1), variables and trials (dimension 2),\nand subjects (dimension 3) from a list of V3D output files for event picking or quality checking.\n\nNote: Non-normalized inputs (default) will have rows equal to the largest row amount across all files.\nNaN will fill extra spaces in other trials.",
     )
     batch_label.pack(fill="x", expand=True, anchor="n")
 
@@ -602,7 +602,7 @@ def open_quality_check_tab():
     )
     browse_in_button(quality_frame, "Browse", quality_directory)
     qual_subs = create_label_entry(
-        quality_frame, "Subject Numbers:", 10, "top", None, "center", "n"
+        quality_frame, "File Position(s):", 10, "top", None, "center", "n"
     )
     execute_function_button(
         quality_frame, "Check Quality", toolbox_quality_check, "top", "n"
@@ -1011,7 +1011,7 @@ def open_ensemble_tab():
                 output_tiff_path = os.path.join(
                     ensemble_out, f"{selected_vars[i]}.tiff"
                 )
-                if os.path.exists(output_tiff_path):
+                if os.path.isfile(output_tiff_path):
                     response = messagebox.askyesno(
                         "File Already Exists",
                         f"The file {output_tiff_path} already exists. Do you want to overwrite it?",
@@ -1697,7 +1697,7 @@ def save_qualitycheck():
         return
     with open(param_save, "w") as file:
         file.write(f"Batched Data Input Directory: {qual_in.get()}\n")
-        file.write(f"Subject Numbers: {qual_subs.get()}\n")
+        file.write(f"File Position(s): {qual_subs.get()}\n")
     messagebox.showinfo("Save Successful", "Quality Check parameters saved!")
 
 
@@ -1711,7 +1711,7 @@ def load_qualitycheck():
         return
     entry_mapping = {
         "Batched Data Input Directory": qual_in,
-        "Subject Numbers": qual_subs,
+        "File Position(s)": qual_subs,
     }
     with open(param_file, "r") as file:
         for line in file:

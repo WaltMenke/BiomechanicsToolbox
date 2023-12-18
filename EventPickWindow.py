@@ -5,6 +5,7 @@ import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from scipy.signal import find_peaks
+from ToolboxFunctions import batch_reshape
 
 
 def exit_window():
@@ -43,7 +44,7 @@ def create_figure():
     return fig, ax, canvas
 
 
-def find_prominent(data, prominence=0.7, distance=15):
+def find_prominent(data, prominence=0.5, distance=12):
     maxes = []
     max_idx, _ = find_peaks(data, prominence=prominence, distance=distance)
     max_idx_sorted = sorted(max_idx[:3])
@@ -68,23 +69,27 @@ def plot_time_series(ax, data):
 
 
 def plot_events(max_idx, min_idx):
-    offset = 0.125
-    for idx in max_idx:
-        if not np.isnan(idx):
+    y_range = ax.get_ylim()[1] - ax.get_ylim()[0]
+    offset_percentage = 0.025
+    offset = offset_percentage * y_range
+    if len(max_idx) > 0 and not np.isnan(max_idx[0]):
+        idx = int(max_idx[0])
+        if 0 <= idx < len(time_series):
             ax.scatter(
                 idx,
-                random_time_series[int(idx)] + offset,
+                time_series[idx] + offset,
                 color="dodgerblue",
                 marker="v",
                 s=70,
                 zorder=2,
             )
 
-    for idx in min_idx:
-        if not np.isnan(idx):
+    if len(min_idx) > 0 and not np.isnan(min_idx[0]):
+        idx = int(min_idx[0])
+        if 0 <= idx < len(time_series):
             ax.scatter(
                 idx,
-                random_time_series[int(idx)] - offset,
+                time_series[idx] - offset,
                 color="firebrick",
                 marker="^",
                 s=70,
@@ -102,40 +107,38 @@ def clear_max(button_idx, max_idx, min_idx, ax, tree_max, _):
     print(f"Max {button_idx+1} Pressed")
     max_idx[button_idx] = np.nan
     ax.clear()
-    plot_time_series(ax, random_time_series)
+    plot_time_series(ax, time_series)
     new_max_idx = sorted(max_idx, key=nan_sort)
     plot_events(new_max_idx, min_idx)
-    update_tree(tree_max, new_max_idx, random_time_series)
+    update_tree(tree_max, new_max_idx, time_series)
     canvas.draw_idle()
 
 
 def update_max(button_idx, max_idx, min_idx, ax, tree_max, _):
     def update_max_point(event):
         x_click = int(event.xdata)
-        search_range = range(
-            max(0, x_click - 12), min(len(random_time_series), x_click + 13)
-        )
-        local_maxima = max(search_range, key=lambda i: random_time_series[i])
+        search_range = range(max(0, x_click - 10), min(len(time_series), x_click + 11))
+        local_maxima = max(search_range, key=lambda i: time_series[i])
         max_idx[button_idx] = local_maxima
 
         ax.clear()
-        plot_time_series(ax, random_time_series)
+        plot_time_series(ax, time_series)
         plot_events(max_idx, min_idx)
         canvas.draw_idle()
         canvas.mpl_disconnect(cid_click)
 
         new_max_idx = sorted(max_idx, key=nan_sort)
-        update_tree(tree_max, new_max_idx, random_time_series)
+        update_tree(tree_max, new_max_idx, time_series)
         print(f"New Max Locations: {new_max_idx}")
         return new_max_idx, min_idx
 
     print(f"Max {button_idx+1} Pressed (idx: {button_idx})")
     max_idx[button_idx] = np.nan
     ax.clear()
-    plot_time_series(ax, random_time_series)
+    plot_time_series(ax, time_series)
     new_max_idx = sorted(max_idx, key=nan_sort)
     plot_events(new_max_idx, min_idx)
-    update_tree(tree_max, new_max_idx, random_time_series)
+    update_tree(tree_max, new_max_idx, time_series)
     canvas.draw_idle()
     canvas.mpl_connect("button_press_event", update_max_point)
     cid_click = canvas.mpl_connect("button_press_event", update_max_point)
@@ -145,40 +148,38 @@ def clear_min(button_idx, max_idx, min_idx, ax, _, tree_min):
     print(f"Min {button_idx+1} Pressed")
     min_idx[button_idx] = np.nan
     ax.clear()
-    plot_time_series(ax, random_time_series)
+    plot_time_series(ax, time_series)
     new_min_idx = sorted(min_idx, key=nan_sort)
     plot_events(max_idx, new_min_idx)
-    update_tree(tree_min, new_min_idx, random_time_series)
+    update_tree(tree_min, new_min_idx, time_series)
     canvas.draw_idle()
 
 
 def update_min(button_idx, max_idx, min_idx, ax, _, tree_min):
     def update_min_point(event):
         x_click = int(event.xdata)
-        search_range = range(
-            max(0, x_click - 12), min(len(random_time_series), x_click + 13)
-        )
-        inverted_data = [-x for x in random_time_series]
+        search_range = range(max(0, x_click - 10), min(len(time_series), x_click + 11))
+        inverted_data = [-x for x in time_series]
         local_minima = max(search_range, key=lambda i: inverted_data[i])
         min_idx[button_idx] = local_minima
 
         ax.clear()
-        plot_time_series(ax, random_time_series)
+        plot_time_series(ax, time_series)
         plot_events(max_idx, min_idx)
         canvas.draw_idle()
         canvas.mpl_disconnect(cid_click)
         new_min_idx = sorted(min_idx, key=nan_sort)
-        update_tree(tree_min, new_min_idx, random_time_series)
+        update_tree(tree_min, new_min_idx, time_series)
         print(f"New Min Locations: {new_min_idx}")
         return max_idx, new_min_idx
 
     print(f"Min {button_idx+1} Pressed")
     min_idx[button_idx] = np.nan
     ax.clear()
-    plot_time_series(ax, random_time_series)
+    plot_time_series(ax, time_series)
     new_min_idx = sorted(min_idx, key=nan_sort)
     plot_events(max_idx, new_min_idx)
-    update_tree(tree_min, new_min_idx, random_time_series)
+    update_tree(tree_min, new_min_idx, time_series)
     canvas.draw_idle()
     cid_click = canvas.mpl_connect("button_press_event", update_min_point)
 
@@ -284,15 +285,15 @@ def create_treeview(parent, row, column, rowspan, heading_text, columns, column_
     return tree
 
 
-def update_tree(tree, idx_list, random_time_series):
+def update_tree(tree, idx_list, time_series):
     for item in tree.get_children():
         tree.delete(item)
 
     for i, idx in enumerate(idx_list):
-        if np.isnan(idx) or idx < 0 or idx >= len(random_time_series):
+        if np.isnan(idx) or idx < 0 or idx >= len(time_series):
             value = 0
         else:
-            value = random_time_series[int(idx)]
+            value = time_series[int(idx)]
 
         tree.insert(
             "",
@@ -332,8 +333,27 @@ def set_button_frame(parent, row, column, rowspan, label_text, btn_specs):
     place_btn_group(btn_specs, frame)
 
 
-def next_plot():
-    pass
+def next_plot(subsection_time_series, ax, plot_number):
+    plot_number += 1
+    print(f"Plot Number: {plot_number}")
+    time_series = subsection_time_series[:, plot_number]
+    max_idx, min_idx, maxes, mins = find_prominent(time_series)
+    print(
+        f"Max Locations: {max_idx}, Min Locations: {min_idx}\nMaxes: {maxes}, Mins: {mins}"
+    )
+
+    ax.clear()
+    update_tree(tree_max, max_idx, time_series)
+    update_tree(tree_min, min_idx, time_series)
+    plot_time_series(ax, time_series)
+    plot_events(max_idx, min_idx)
+    ax.relim()
+    ax.autoscale_view()
+    canvas.draw()
+    canvas.flush_events()
+
+    plot_time_series(ax, time_series)
+    plot_events(max_idx, min_idx)
 
 
 def previous_plot():
@@ -350,16 +370,19 @@ def save_events():
 root = ttk.Window()
 center_window(root, 40, 40)
 
-np.random.seed(42)
-t = np.linspace(0, 2 * np.pi, 200)
-random_time_series = 1.5 * np.sin(2 * t) + 0.5 * np.cos(4 * t) - 1.0 * np.sin(6 * t)
+plots_file = "L:\Zhang\WaltMenke\Dissertation\Pilot\PythonIntegration\R_S1.txt"
+full_series, var_list, components, _ = batch_reshape(plots_file)  # imports 3d matrix
+file_number = 0  # user specified file number
+subsection_time_series = full_series[:, :, file_number]
+plot_number = 0
+time_series = subsection_time_series[:, plot_number]
 
 fig, ax, canvas = create_figure()
-max_idx, min_idx, maxes, mins = find_prominent(random_time_series)
+max_idx, min_idx, maxes, mins = find_prominent(time_series)
 print(
-    f"Max Locations: {max_idx}\nMin Locations: {min_idx}\nMaxes: {maxes}\nMins: {mins}"
+    f"Max Locations: {max_idx}, Min Locations: {min_idx}\nMaxes: {maxes}, Mins: {mins}"
 )
-plot_time_series(ax, random_time_series)
+plot_time_series(ax, time_series)
 plot_events(max_idx, min_idx)
 
 root.columnconfigure(0, weight=2)
@@ -392,15 +415,21 @@ set_button_frame(
 button_specs = [
     (
         "Reset Plot",
-        lambda: reset_current(random_time_series, ax),
+        lambda: reset_current(time_series, ax),
         17,
         1,
         "navigate.TButton",
     ),
-    ("Next Plot", lambda: next_plot(random_time_series, ax), 1, 2, "navigate.TButton"),
+    (
+        "Next Plot",
+        lambda: next_plot(subsection_time_series, ax, plot_number),
+        1,
+        2,
+        "navigate.TButton",
+    ),
     (
         "Previous Plot",
-        lambda: previous_plot(random_time_series, ax),
+        lambda: previous_plot(time_series, ax),
         1,
         1,
         "navigate.TButton",
@@ -432,7 +461,7 @@ for i, idx in enumerate(max_idx):
         "",
         "end",
         text=f"{i + 1}",
-        values=(idx, np.round(random_time_series[idx], 3)),
+        values=(idx, np.round(time_series[idx], 3)),
     )
 tree_max["height"] = len(max_idx) + 1
 
@@ -445,7 +474,7 @@ for i, idx in enumerate(min_idx):
         "",
         "end",
         text=f"{i + 1}",
-        values=(idx, np.round(random_time_series[idx], 3)),
+        values=(idx, np.round(time_series[idx], 3)),
     )
 tree_min["height"] = len(min_idx) + 1
 
