@@ -1,3 +1,4 @@
+#!C:/Users/Walt/OneDrive/PythonStuff/BiomechanicsToolbox/desktop_venv
 import tkinter as tk
 from tkinter import ttk, filedialog, PhotoImage, messagebox, simpledialog
 import ttkbootstrap as ttk
@@ -12,15 +13,17 @@ import subprocess
 import spm1d as spm
 import re
 import webbrowser
-import ToolboxFunctions as tf
-from PIL import Image, ImageTk
-import openpyxl
+import ToolboxFunctions as bf
 import ast
+import csv
+from openpyxl import Workbook
+from collections import OrderedDict
+from PIL import Image, ImageTk
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
-
-##################### Initial Functions ######################
+param_dir = None
+python_exe = sys.executable
 
 
 def open_program_docs():
@@ -138,22 +141,7 @@ def browse_out_button(parent, ButtonLabel, desired_function):
     return browse_button
 
 
-color_choices = [
-    "Black",
-    "Blue",
-    "Red",
-    "Green",
-    "Purple",
-    "Orange",
-    "Yellow",
-    "Cyan",
-    "Magenta",
-    "Grey",
-]
-
 ##################### Script Gen Tab ######################
-
-
 def open_scriptgen_tab():
     global script_entry, model_entry, heightweight_entry, script_out_entry
     if check_tab_exists("Script Gen"):
@@ -163,25 +151,25 @@ def open_scriptgen_tab():
     main_tab.select(scriptgen_tab)
     scriptgen_label = tk.Label(
         scriptgen_tab,
-        text="This function generates pipelines and models for each subject with the same format \nas the template script supplied, and saves them in a user-specified directory.\n\nNote: Subject number is based on entries in the Height-Weight table.",
+        text="This function generates pipelines and models for each subject with the same format \nas the template script supplied, and saves them in a user-specified directory.\n\nNOTE: Subject number is based on entries in the Height-Weight table.",
     )
     scriptgen_label.pack(anchor="n")
 
-    input_entry = None
-    output_entry = None
+    script_entry = None
+    script_out_entry = None
 
     def toolbox_scriptgen():
         if not script_entry.get().endswith(".v3s"):
             messagebox.showerror(
                 "Input Error",
-                f"Script file is '{script_entry.get()}'. Please enter the path to the tf.v3d pipeline file (.v3s).",
+                f"Script file is '{script_entry.get()}'. Please enter the path to the V3D pipeline file (.v3s).",
                 icon="error",
             )
             return
         if not model_entry.get().endswith(".mdh"):
             messagebox.showerror(
                 "Input Error",
-                f"Model file is '{model_entry.get()}'. Please enter the path to the tf.v3d model file (.mdh).",
+                f"Model file is '{model_entry.get()}'. Please enter the path to the V3D model file (.mdh).",
                 icon="error",
             )
             return
@@ -192,18 +180,18 @@ def open_scriptgen_tab():
                 icon="error",
             )
             return
-        tf.generate_scripts(
+        bf.generate_scripts(
             script_entry.get(),
             model_entry.get(),
             heightweight_entry.get(),
-            output_entry.get(),
+            script_out_entry.get(),
         )
 
     def script_template_direc():
         script_direc = filedialog.askopenfilename(
             title="Select Script Template",
             multiple=False,
-            filetypes=(("tf.v3d Pipeline", "*.v3s"),),
+            filetypes=(("V3D Pipeline", "*.v3s"),),
         )
         if not script_direc:
             return
@@ -214,7 +202,7 @@ def open_scriptgen_tab():
         model_direc = filedialog.askopenfilename(
             title="Select Model Template",
             multiple=False,
-            filetypes=(("tf.v3d Model", "*.mdh"),),
+            filetypes=(("V3D Model", "*.mdh"),),
         )
         if not model_direc:
             return
@@ -234,7 +222,7 @@ def open_scriptgen_tab():
 
     def script_out_direc():
         out_direc = filedialog.askdirectory(
-            title="Select Output Directory", initialdir=input_entry
+            title="Select Output Directory", initialdir=script_entry
         )
         if not out_direc:
             return
@@ -264,8 +252,6 @@ def open_scriptgen_tab():
 
 
 ##################### EMG Tab ######################
-
-
 def open_emg_tab():
     if check_tab_exists("EMG"):
         return
@@ -280,13 +266,11 @@ def open_emg_tab():
 
 
 def save_emg():
-    with open("EMG_Params.txt", "w") as file:
-        pass
+    # with open("EMG_Params.txt", "w") as file:
+    pass
 
 
 ##################### Batch Tab ######################
-
-
 def open_batch_tab():
     global batch_in_entry, batch_out_entry, batch_components_entry, batch_search_entry, batch_trials, batch_file_savename, batch_normalized
     if check_tab_exists("Batch"):
@@ -296,7 +280,7 @@ def open_batch_tab():
     main_tab.select(batch_tab)
     batch_label = tk.Label(
         batch_tab,
-        text="This function creates a 3D NumPy array of data points (dimension 1), variables and trials (dimension 2),\nand subjects (dimension 3) from a list of tf.v3d output files for event picking or quality checking.\n\nNote: Non-normalized inputs (default) will have rows equal to the largest row amount across all files.\nNaN will fill extra spaces in other trials.",
+        text="This function creates a 3D NumPy array of data points (dimension 1), variables and trials (dimension 2),\nand subjects (dimension 3) from a list of V3D output files for event picking or quality checking.\n\nNOTE: Non-normalized inputs (default) will have rows equal to the largest row amount across all files.\nNaN will fill extra spaces in other trials.",
     )
     batch_label.pack(fill="x", expand=True, anchor="n")
 
@@ -317,8 +301,8 @@ def open_batch_tab():
         X = int(components[0])
         Y = int(components[1])
         Z = int(components[2])
-        tf.batch(
-            batch_in_entry.get(),
+        bf.batch(
+            script_entry.get(),
             batch_search_entry.get(),
             batch_out_entry.get(),
             batch_file_savename.get(),
@@ -355,7 +339,7 @@ def open_batch_tab():
     browse_in_button(batch_frame, "Browse", batch_in)
     batch_out_entry = create_label_entry(batch_frame, "Output Directory:", 80, "top")
     browse_out_button(batch_frame, "Browse", batch_out)
-    batch_normalized = create_checkbox(batch_frame, "Inputs Normalized:", False, 0, 10)
+    batch_normalized = create_checkbox(batch_frame, "Inputs Normalized?", False, 0, 10)
 
     batch_sub_left = ttk.Frame(batch_frame)
     batch_sub_left.pack(side="left")
@@ -410,7 +394,7 @@ def open_normalize_tab():
             norm_out.set(out_direc)
 
     def toolbox_normalize():
-        tf.normalize(norm_in.get(), norm_out.get())
+        bf.normalize(norm_in.get(), norm_out.get())
 
     normalize_label.pack(fill="x", anchor="n", expand=True)
     normalize_frame = ttk.Frame(normalize_tab)
@@ -432,7 +416,7 @@ def open_quality_check_tab():
     main_tab.select(quality_check_tab)
     quality_check_label = tk.Label(
         quality_check_tab,
-        text="This function takes an import from 'Batch' and allows the user to select at least one subject\nto plot all variable data to identify outliers and problematic trials.\n\nNote: Subject Numbers should be comma-separated. Alternatively, type 'All'.\nWarning: Typing 'All' may take a long time to run and is not advisable for older hardware.",
+        text="This function takes an import from 'Batch' and allows the user to select at least one subject\nto plot all variable data to identify outliers and problematic trials.\n\nNOTE: Subject Numbers should be comma-separated. Alternatively, type 'All'.\nWarning: Typing 'All' may take a long time to run and is not advisable for older hardware.",
     )
     quality_check_label.pack(fill="none", expand=False, anchor="n")
     plots_out = []
@@ -458,18 +442,18 @@ def open_quality_check_tab():
             )
             return
 
-        if not qual_subs.get():
+        if not quality_subject_entry.get():
             messagebox.showerror(
                 "Input Error", "Please specify at least one subject.", icon="error"
             )
             return
 
-        if qual_subs.get() == "All":
-            _, sub_count = tf.qual_metadata(qual_check_in)
-            subject_idx = range(0, sub_count)
+        if quality_subject_entry.get() == "All":
+            _, sub_count = bf.qual_metadata(qual_check_in)
+            quality_subject = range(0, sub_count)
         else:
-            sub_num = len(qual_subs.get().split(","))
-            # _, sub_count = tf.qual_metadata(qual_check_in)
+            sub_num = len(quality_subject_entry.get().split(","))
+            # _, sub_count = bf.qual_metadata(qual_check_in)
             # if sub_count not in range(sub_num + 1):
             #     messagebox.showerror(
             #         "Input Error",
@@ -478,12 +462,12 @@ def open_quality_check_tab():
             #     )
             #     return
             if sub_num == 1:
-                subject_num = qual_subs.get()
+                subject_num = quality_subject_entry.get()
             else:
-                subject_num = qual_subs.get().split(",")
-            subject_idx = [int(x) - 1 for x in subject_num]
-        for sub in range(0, len(subject_idx)):
-            plots_out += tf.quality_check(qual_check_in, int(subject_idx[sub]))
+                subject_num = quality_subject_entry.get().split(",")
+            quality_subject = [int(x) - 1 for x in subject_num]
+        for sub in range(0, len(quality_subject)):
+            plots_out += bf.quality_check(qual_check_in, int(quality_subject[sub]))
         qual_plot_num = 0
 
         def exit_qual(qual_window):
@@ -562,6 +546,7 @@ def open_quality_check_tab():
         qual_window.resizable(True, True)
         qual_window.title("Biomechanics Toolbox - Quality Checking")
         qual_window.iconbitmap("BT_Icon.ico")
+        qual_window.iconbitmap(default="BT_Icon.ico")
         center_window(qual_window, 1100, 1100)
 
         canvas = QualityPlot(qual_window, plots_out)
@@ -601,7 +586,7 @@ def open_quality_check_tab():
         quality_frame, "Batched Data Input Directory:", 80, "top", None, "center", "n"
     )
     browse_in_button(quality_frame, "Browse", quality_directory)
-    qual_subs = create_label_entry(
+    quality_subject_entry = create_label_entry(
         quality_frame, "Subject Numbers:", 10, "top", None, "center", "n"
     )
     execute_function_button(
@@ -611,6 +596,7 @@ def open_quality_check_tab():
 
 ##################### Event Pick Tab ######################
 def open_eventpick_tab():
+    global event_data_in, event_data_out, event_subject, event_condition, event_listbox
     if check_tab_exists("Event Pick"):
         return
     eventpick_tab = ttk.Frame(main_tab)
@@ -618,42 +604,38 @@ def open_eventpick_tab():
     main_tab.select(eventpick_tab)
     eventpick_label = tk.Label(
         eventpick_tab,
-        text="This function allows you to pick discrete events from a batched output file.\nNote: Select ONE subject and ONE condition.",
+        text="This function allows you to pick discrete events from a batched output file.\nNOTE: Select one subject and one condition only.",
     )
     eventpick_label.pack(fill="x", anchor="n", expand=True)
 
-    # def create_eventplot_info(data_cube, subject, condition, var_list, components):
-    #     true_vars = list(set(var_list))
-    #     trials = int(data_cube.shape[1] / len(var_list))
-
-    #     plot_titles = []
-    #     for var_idx in range(len(true_vars)):
-    #         for comp_idx in range(len(components)):
-    #             for trial_idx in range(trials):
-    #                 plot_titles.append(
-    #                     f"S{subject}C{condition}T{trial_idx+1}  {true_vars[var_idx]} {components[comp_idx]}"
-    #                 )
-    #     column_indices = []
-    #     for set_index in range(trials):
-    #         for i in range(true_vars):
-    #             index = set_index * true_vars + i
-    #             if index < data_cube.shape[1]:
-    #                 column_indices.append(index)
-    #     return plot_titles, column_indices
-
-    def toolbox_eventpick(data_in, data_out):
-        if data_in == "" or data_out == "":
+    def toolbox_eventpick(event_data_in, event_data_out):
+        if event_data_in == "" or event_data_out == "":
             tk.messagebox.showerror(
                 "Error", "Input and/or Output cannot be empty strings.", icon="error"
             )
             return
-        if not os.path.exists(data_in):
+        if not os.path.exists(event_data_in):
             tk.messagebox.showerror(
-                "Error", f"Input '{data_in}' does not exist.", icon="error"
+                "Error", f"Input '{event_data_in}' does not exist.", icon="error"
             )
             return
-        if not os.path.exists(data_out):
-            os.makedirs(data_out)
+        if not os.path.exists(event_data_out):
+            try:
+                os.makedirs(event_data_out)
+            except PermissionError:
+                tk.messagebox.showerror(
+                    "Directory Error",
+                    "The output directory is not writable. Please select a different/proper directory.",
+                    icon="error",
+                )
+                return
+        if not event_listbox.curselection():
+            tk.messagebox.showerror(
+                "Error",
+                "Please select at least one variable from the box above.",
+                icon="error",
+            )
+            return
         var_bool_array = set_var_selection(
             event_listbox
         )  # returns a list of booleans corresponding to the selected variables
@@ -669,9 +651,16 @@ def open_eventpick_tab():
         stripped_vars = [
             re.sub(pattern, "", var) for var in flattened_vars
         ]  # applies regex pattern
-        data_cube, file_vars, _, components = tf.batch_reshape(
-            data_in
+        data_cube, file_vars, _, components = bf.batch_reshape(
+            event_data_in
         )  # reshapes the input data
+        if int(event_subject.get()) > data_cube.shape[2]:
+            tk.messagebox.showerror(
+                "Error",
+                f"Subject {event_subject.get()} does not exist in the input data of subject count {data_cube.shape[2]}.",
+                icon="error",
+            )
+            return
         trials = int(data_cube.shape[1] / len(var_bool_array))  # number of trials
         sub_titles = []  # list of subjects
         var_titles = []  # list of variables
@@ -679,7 +668,7 @@ def open_eventpick_tab():
         for var_idx in range(sum(var_bool_array)):  # for each variable selected
             for trial_idx in range(trials):  # for each trial
                 sub_titles.append(
-                    f"S{int(subject_idx.get())}C{int(condition_in.get())}T{trial_idx+1}"
+                    f"S{int(event_subject.get())}C{int(event_condition.get())}T{trial_idx+1}"
                 )  # creates plot titles, such as "S1C1T1"
                 var_titles.append(
                     f"{str(stripped_vars[var_idx])}"
@@ -693,19 +682,48 @@ def open_eventpick_tab():
             np.nan,
         )  # creates an empty array to fill with data
         var_bool_array = np.array(var_bool_array)  # converts list to array
+        var_count = sum(var_bool_array)
         for i in range(trials):  # for each trial
             start_col = i * len(
                 var_bool_array
             )  # start column, based on amount of variables
             end_col = (i + 1) * len(var_bool_array)  # end column
             selected_columns = data_cube[
-                :, start_col:end_col, int(subject_idx.get()) - 1
+                :, start_col:end_col, int(event_subject.get()) - 1
             ][
                 :, var_bool_array.astype(bool), None
             ]  # uses boolean mask to select columns
-            data_to_plot[:, i * sum(var_bool_array) : (i + 1) * sum(var_bool_array)] = (
+            data_to_plot[:, i * var_count : (i + 1) * var_count] = (
                 selected_columns  # fills the empty array with the selected columns
             )
+        data_2d = data_to_plot.reshape(209, trials * var_count)
+        reordered_data = np.empty((data_to_plot.shape[0], var_count * trials))
+        for variable in range(var_count):
+            for trial in range(trials):
+                original_column_index = trial * var_count + variable
+                reordered_column_index = variable * trials + trial
+                reordered_data[:, reordered_column_index] = data_2d[
+                    :, original_column_index
+                ]
+        np.save("reordered_data.npy", reordered_data)
+        for i in range(
+            len(var_titles)
+        ):  # Loop to replace spaces with underscores for plot titles
+            if var_titles[i][-1] in ["X", "Y", "Z"]:
+                var_titles[i] = var_titles[i].replace(" ", "_")
+        var_titles_str = " ".join(var_titles)
+        subprocess.call(
+            [
+                python_exe,
+                "EventPickWindow.py",
+                event_subject.get(),
+                event_condition.get(),
+                "reordered_data.npy",
+                str(trials),
+                var_titles_str,
+                event_data_out,
+            ]
+        )
 
     def raw_data_direc():
         in_direc = filedialog.askopenfilename(
@@ -716,17 +734,17 @@ def open_eventpick_tab():
         if not in_direc:
             return
         if in_direc:
-            data_in.set(in_direc)
-            event_listbox_gen(data_in.get(), event_listbox)
+            event_data_in.set(in_direc)
+            event_listbox_gen(event_data_in.get(), event_listbox)
 
     def events_out_direc():
         out_direc = filedialog.askdirectory(
-            title="Select Output Directory", initialdir=data_in
+            title="Select Output Directory", initialdir=event_data_in
         )
         if not out_direc:
             return
         if out_direc:
-            data_out.set(out_direc)
+            event_data_out.set(out_direc)
 
     def set_var_selection(listbox):
         if listbox.size() == 0:
@@ -746,7 +764,7 @@ def open_eventpick_tab():
         return select_handler
 
     def event_listbox_gen(normalized_data, listbox):
-        _, var_list, _, comp_list = tf.batch_reshape(normalized_data)
+        _, var_list, _, comp_list = bf.batch_reshape(normalized_data)
         appended_vars = []
         for i in range(len(var_list)):
             current_xyz = comp_list[i % len(comp_list)]
@@ -756,6 +774,8 @@ def open_eventpick_tab():
         listbox.delete(0, tk.END)
         for var in appended_vars:
             listbox.insert(tk.END, var)
+        listbox_width = max(len(var) for var in appended_vars)
+        listbox.config(width=listbox_width - 1)
 
     eventpick_frame = ttk.Frame(eventpick_tab)
     eventpick_frame.pack(expand=1)
@@ -765,51 +785,106 @@ def open_eventpick_tab():
         text="Detected Variables:",
     )
     box_label.pack(side=tk.TOP, padx=10, pady=0)
-    event_listbox = tk.Listbox(eventpick_frame, selectmode=tk.MULTIPLE)
+    event_listbox = tk.Listbox(
+        eventpick_frame, selectmode=tk.MULTIPLE, exportselection=False
+    )
     event_listbox.pack(side=tk.TOP, padx=10, pady=0)
     event_listbox.bind("<<ListboxSelect>>", on_listbox_select(event_listbox))
 
-    data_in = create_label_entry(eventpick_frame, "Batched Data File:", 80, "top")
+    event_data_in = create_label_entry(eventpick_frame, "Batched Data File:", 80, "top")
     browse_in_button(eventpick_frame, "Browse", raw_data_direc)
-    data_out = create_label_entry(
+    event_data_out = create_label_entry(
         eventpick_frame, "Events Output Directory:", 80, "top"
     )
     browse_out_button(eventpick_frame, "Browse", events_out_direc)
-    subject_idx = create_label_entry(
+    event_subject = create_label_entry(
         eventpick_frame, "Subject Number (enter ONE):", 10, "top"
     )
-    condition_in = create_label_entry(
+    event_condition = create_label_entry(
         eventpick_frame, "Condition Number (enter ONE)):", 10, "top"
     )
     execute_function_button(
         eventpick_frame,
         "Pick Events",
-        lambda: toolbox_eventpick(data_in.get(), data_out.get()),
+        lambda: toolbox_eventpick(event_data_in.get(), event_data_out.get()),
     )
 
 
-def save_eventpick():
-    with open("EventPick_Params.txt", "w") as file:
-        pass
+def entry_dbl_click(event):
+    event.stopPropagation()
 
 
 ##################### Event Compile Tab ######################
 def open_eventcompile_tab():
+    global compile_in, compile_out
     if check_tab_exists("Event Compile"):
         return
-    stats_tab = ttk.Frame(main_tab)
-    main_tab.add(stats_tab, text="Event Compile")
-    main_tab.select(stats_tab)
-    stats_label = tk.Label(
-        stats_tab,
-        text="This function allows you to gather your picked events in table outputs.",
+    compile_tab = ttk.Frame(main_tab)
+    main_tab.add(compile_tab, text="Event Compile")
+    main_tab.select(compile_tab)
+    compile_label = tk.Label(
+        compile_tab,
+        text="This function allows you to aggregate your picked events in table outputs.\n\nNOTE: This function requires you to set an input directory that contains only\nCSV Event Output files generated by the Biomechanics Toolbox.\n\nTwo files will be generated:\n\tOne containing averaged events with individual subject values for all conditions\n\tOne containing average events across all subjects for all conditions",
     )
-    stats_label.pack(fill="x", anchor="n", expand=True)
+    compile_label.pack(fill="x", anchor="n", expand=True)
 
+    def compile_in_direc():
+        in_direc = filedialog.askdirectory(
+            title="Select Events Directory",
+            initialdir=".",
+        )
+        if not in_direc:
+            return
+        if in_direc:
+            compile_in.set(in_direc)
 
-def save_eventcompile():
-    with open("EventCompile_Params.txt", "w") as file:
-        pass
+    def compile_out_direc():
+        out_direc = filedialog.askdirectory(
+            title="Select Output Directory",
+            initialdir=".",
+        )
+        if not out_direc:
+            return
+        if out_direc:
+            compile_out.set(out_direc)
+
+    def toolbox_compile_events(compile_in, compile_out):
+        if not os.path.exists(compile_in.get()):
+            messagebox.showerror(
+                "Directory Error",
+                f"No directory with the name '{compile_in.get()}' exists.",
+                icon="error",
+            )
+            return
+        if not os.path.exists(compile_out.get()):
+            result = messagebox.askyesno(
+                "Directory Error",
+                f"No directory with the name '{ensemble_out.get()}' exists. Create it?",
+                icon="question",
+            )
+            if result:
+                os.makedirs(compile_out.get())
+            else:
+                return
+
+        subprocess.call(
+            [
+                python_exe,
+                "EventCompile.py",
+                compile_in.get(),
+                compile_out.get(),
+            ]
+        )
+
+    compile_in = create_label_entry(compile_tab, "Events Directory:", 80, "top")
+    browse_in_button(compile_tab, "Browse", compile_in_direc)
+    compile_out = create_label_entry(compile_tab, "Output Directory:", 80, "top")
+    browse_out_button(compile_tab, "Browse", compile_out_direc)
+    execute_function_button(
+        compile_tab,
+        "Compile Events",
+        lambda: toolbox_compile_events(compile_in, compile_out),
+    )
 
 
 ##################### Ensemble Tab ######################
@@ -822,7 +897,7 @@ def open_ensemble_tab():
     main_tab.select(ensemble_tab)
     ensemble_label = tk.Label(
         ensemble_tab,
-        text="This function allows you to create ensemble curves of specific\nnormalized variables that are of publication quality.\nNote: Double click on list items to edit them.",
+        text="This function allows you to create ensemble curves of specific\nnormalized variables that are of publication quality.\nNOTE: Double click on list items to edit them.",
     )
     ensemble_label.pack(fill="x", anchor="n", expand=True)
 
@@ -836,10 +911,10 @@ def open_ensemble_tab():
             return
         if in_direc:
             ensemble_in.set(in_direc)
-            var_listbox(ensemble_in.get(), ens_variables_listbox, ens_axes_listbox)
+            var_listbox(ensemble_in.get(), variables_listbox, axes_listbox)
 
     def var_listbox(normalized_data, listbox_a, listbox_b):
-        _, var_list, _, comp_list = tf.batch_reshape(normalized_data)
+        _, var_list, _, comp_list = bf.batch_reshape(normalized_data)
         appended_vars = []
         for i in range(len(var_list)):
             current_xyz = comp_list[i % len(comp_list)]
@@ -868,18 +943,18 @@ def open_ensemble_tab():
             ensemble_out.set(out_direc)
 
     def on_scroll(*args):
-        ens_variables_listbox_scroll(*args)
-        ens_axes_listbox_scroll(*args)
+        variables_listbox_scroll(*args)
+        axes_listbox_scroll(*args)
 
-    def ens_variables_listbox_scroll(event):
+    def variables_listbox_scroll(event):
         fraction = -1 * (event.delta / 120)
-        ens_variables_listbox.yview_scroll(int(fraction), "units")
-        ens_axes_listbox.yview_scroll(int(fraction) * 5, "units")
+        variables_listbox.yview_scroll(int(fraction), "units")
+        axes_listbox.yview_scroll(int(fraction) * 5, "units")
 
-    def ens_axes_listbox_scroll(event):
+    def axes_listbox_scroll(event):
         fraction = -1 * (event.delta / 120)
-        ens_variables_listbox.yview_scroll(int(fraction) * 5, "units")
-        ens_axes_listbox.yview_scroll(int(fraction), "units")
+        variables_listbox.yview_scroll(int(fraction) * 5, "units")
+        axes_listbox.yview_scroll(int(fraction), "units")
 
     def on_listbox_select(listbox):
         def select_handler(event):
@@ -935,51 +1010,47 @@ def open_ensemble_tab():
                 raise ValueError("No input directory selected.")
             if ensemble_out == "":
                 raise ValueError("No output directory selected.")
-            if 299 >= int(ensemble_dpi.get()) < 801:
-                raise ValueError(
-                    "DPI value must be greater than 300 and less than 800."
-                )
-            var_bool_array = set_var_selection(ens_variables_listbox)
+            if 0 > int(dpi_var.get()) < 600:
+                raise ValueError("DPI value must be greater than 0 and less than 600.")
+            var_bool_array = set_var_selection(variables_listbox)
             if sum(var_bool_array) == 0:
                 raise ValueError("No variables selected. Make sure they are selected!")
             axes = [
                 item
-                for item, selected in zip(
-                    ens_axes_listbox.get(0, "end"), var_bool_array
-                )
+                for item, selected in zip(axes_listbox.get(0, "end"), var_bool_array)
                 if selected
             ]
             selected_vars = [
                 item
                 for item, selected in zip(
-                    ens_variables_listbox.get(0, "end"), var_bool_array
+                    variables_listbox.get(0, "end"), var_bool_array
                 )
                 if selected
             ]
-            norm_cube, _, _, _ = tf.batch_reshape(ensemble_in)
+            norm_cube, _, _, _ = bf.batch_reshape(ensemble_in)
 
             if norm_cube.ndim != 3:
                 raise ValueError(
-                    "Data input does not have 3 dimensions. Check the tf.batch() function output."
+                    "Data input does not have 3 dimensions. Check the batch() function output."
                 )
             are_floats = np.all(np.isfinite(norm_cube))  # Check for NaNs
             if not are_floats:
                 raise ValueError(
-                    "Data input contains NaNs. Check the tf.batch() function output."
+                    "Data input contains NaNs. Check the batch() function output."
                 )
             if norm_cube.shape[0] != 101:
                 raise ValueError(
-                    "This data doesn't look normalized to 101 data points. Check the tf.batch/tf.normalize function output."
+                    "This data doesn't look normalized to 101 data points. Check the bbatch/normalize function output."
                 )
-            ensemble_means, ensemble_std = tf.process_cube(norm_cube, var_bool_array)
+            ensemble_means, ensemble_std = bf.process_cube(norm_cube, var_bool_array)
 
             if "ensemble_means" not in locals() or np.size(ensemble_means) == 0:
                 raise ValueError(
-                    "Ensemble_means is either not defined or has size 0. Check the tf.process_cube() function."
+                    "Ensemble_means is either not defined or has size 0. Check the bf.process_cube() function."
                 )
             if "ensemble_std" not in locals() or np.size(ensemble_std) == 0:
                 raise ValueError(
-                    "Ensemble_std is either not defined or has size 0. Check the tf.process_cube() function."
+                    "Ensemble_std is either not defined or has size 0. Check the bf.process_cube() function."
                 )
 
             flattened_axes = [
@@ -990,11 +1061,11 @@ def open_ensemble_tab():
             plots_out = []
             for i in range(sum(var_bool_array)):
                 plots_out.append(
-                    tf.ensemble_plot(
+                    bf.ensemble_plot(
                         ensemble_means[:, i],
                         ensemble_std[:, i],
-                        mean_color=str(ens_mean_color.get()),
-                        std_color=str(ens_std_color.get()),
+                        mean_color=str(mean_color_var.get()),
+                        std_color=str(std_color_var.get()),
                         title=f"{selected_vars[i]}",
                         xlabel=f"{x_axes[i]}",
                         ylabel=f"{y_axes[i]}",
@@ -1004,7 +1075,7 @@ def open_ensemble_tab():
                 )
             if plots_out == []:
                 raise ValueError(
-                    "Plots_out is empty. Check the tf.ensemble_plot() function."
+                    "Plots_out is empty. Check the bf.ensemble_plot() function."
                 )
             for i, (fig, _) in enumerate(plots_out):
                 output_tiff_path = os.path.join(
@@ -1022,7 +1093,7 @@ def open_ensemble_tab():
                 fig.savefig(
                     output_tiff_path,
                     format="tiff",
-                    dpi=int(ensemble_dpi.get()),
+                    dpi=int(dpi_var.get()),
                     bbox_inches="tight",
                 )
                 plt.close(fig)
@@ -1045,26 +1116,28 @@ def open_ensemble_tab():
     box_frame.pack(expand=1, side="top", anchor="n")
     scrollbar = tk.Scrollbar(box_frame, orient="vertical", command=on_scroll)
 
-    ens_variables_listbox = tk.Listbox(
-        box_frame, selectmode=tk.MULTIPLE, yscrollcommand=scrollbar.set
+    variables_listbox = tk.Listbox(
+        box_frame,
+        selectmode=tk.MULTIPLE,
+        yscrollcommand=scrollbar.set,
+        exportselection=False,
     )
-    ens_variables_listbox.pack(side=tk.LEFT, padx=10, pady=0)
-    ens_variables_listbox.bind("<MouseWheel>", ens_variables_listbox_scroll)
-    ens_variables_listbox.bind(
-        "<<ListboxSelect>>", on_listbox_select(ens_variables_listbox)
-    )
-    ens_variables_listbox.bind(
-        "<Double-Button-1>", on_double_click(ens_variables_listbox)
-    )
+    variables_listbox.pack(side=tk.LEFT, padx=10, pady=0)
+    variables_listbox.bind("<MouseWheel>", variables_listbox_scroll)
+    variables_listbox.bind("<<ListboxSelect>>", on_listbox_select(variables_listbox))
+    variables_listbox.bind("<Double-Button-1>", on_double_click(variables_listbox))
     scrollbar.pack(side=tk.LEFT, fill="y")
-    ens_axes_listbox = tk.Listbox(
-        box_frame, selectmode=tk.MULTIPLE, yscrollcommand=scrollbar.set
+    axes_listbox = tk.Listbox(
+        box_frame,
+        selectmode=tk.MULTIPLE,
+        yscrollcommand=scrollbar.set,
+        exportselection=False,
     )
-    ens_axes_listbox.pack(side=tk.LEFT, padx=10, pady=0)
-    ens_axes_listbox.bind("<MouseWheel>", ens_axes_listbox_scroll)
-    ens_axes_listbox.bind("<<ListboxSelect>>", on_listbox_select(ens_axes_listbox))
-    ens_axes_listbox.bind("<Double-Button-1>", on_double_click(ens_axes_listbox))
-    scrollbar.config(command=ens_variables_listbox.yview)
+    axes_listbox.pack(side=tk.LEFT, padx=10, pady=0)
+    axes_listbox.bind("<MouseWheel>", axes_listbox_scroll)
+    axes_listbox.bind("<<ListboxSelect>>", on_listbox_select(axes_listbox))
+    axes_listbox.bind("<Double-Button-1>", on_double_click(axes_listbox))
+    scrollbar.config(command=variables_listbox.yview)
 
     def create_label_entry_pair(parent, label_text, entry_default, side="left"):
         frame = ttk.Frame(parent)
@@ -1082,26 +1155,26 @@ def open_ensemble_tab():
 
     options_frame = ttk.Frame(ensemble_tab)
     options_frame.pack(expand=1, side="top", anchor="n")
-    ensemble_dpi = create_label_entry_pair(
+    dpi_var = create_label_entry_pair(
         options_frame,
         "TIFF DPI:",
         "300",
     )
-    ensemble_dpi.set("300")
+    dpi_var.set("300")
 
-    mean_label, ens_mean_color = create_dropdown(
+    mean_label, mean_color_var = create_dropdown(
         options_frame, "Mean Color:", color_choices, "center", 10
     )
-    ens_mean_color.set(color_choices[0])
-    std_label, ens_std_color = create_dropdown(
+    mean_color_var.set(color_choices[0])
+    std_label, std_color_var = create_dropdown(
         options_frame, "Std Color:", color_choices, "center", 10
     )
-    ens_std_color.set(color_choices[0])
+    std_color_var.set(color_choices[0])
 
     mean_label.pack(side="left", padx=5)
-    ens_mean_color.pack(side="left", padx=5)
+    mean_color_var.pack(side="left", padx=5)
     std_label.pack(side="left", padx=5)
-    ens_std_color.pack(side="left", padx=5)
+    std_color_var.pack(side="left", padx=5)
 
     y_line_frame = ttk.Frame(ensemble_tab)
     y_line_frame.pack(side="top")
@@ -1244,7 +1317,7 @@ def open_spm_tab():
         original_width = root.winfo_width()
         original_height = root.winfo_height()
         percentage_width = 0.4
-        percentage_height = 0.85
+        percentage_height = 0.75
         second_width = int(original_width * percentage_width)
         second_height = int(original_height * percentage_height)
         x = root.winfo_x() - second_width
@@ -1254,7 +1327,6 @@ def open_spm_tab():
     options = None
 
     def on_group_selected(event):
-        global selected_group, group_names, group_dropdown, test_dropdown, entry_boxes, output_box, alpha, equal_var, two_tail, spm_dpi, dropdowns, spm_x_label, spm_y_box
         nonlocal options
         selected_group = group_dropdown.get()
 
@@ -1283,63 +1355,39 @@ def open_spm_tab():
         two_tail = create_checkbox(
             parent=options, label_text="Two Tailed", default_value=True
         )
-        spm_dpi = create_label_entry(
+        dpi = create_label_entry(
             parent=options,
             label_text="TIFF DPI:",
             width=10,
             default_val=300,
             side="top",
         )
-
-        dropdowns = []
-        for group_num in range(1, int(selected_group) + 1):
-            label_text = f"Group {group_num} Color:"
-            dropdown_label, dropdown_color = create_dropdown(
-                parent=options,
-                label_text=label_text,
-                options=color_choices,
-            )
-            dropdown_color.set(color_choices[group_num - 1])
-            dropdowns.append((dropdown_label, dropdown_color))
-
-        spm_x_label = create_label_entry(
+        g1_label, g1_color = create_dropdown(
+            parent=options,
+            label_text="Group 1 Color:",
+            options=color_choices,
+        )
+        g1_color.set(color_choices[0])
+        g2_label, g2_color = create_dropdown(
+            parent=options,
+            label_text="Group 2 Color:",
+            options=color_choices,
+        )
+        g2_color.set(color_choices[1])
+        plot_x_label = create_label_entry(
             parent=options,
             label_text="Plot X Label:",
-            width=25,
+            width=20,
             default_val="Percent of 'X'",
             side="top",
         )
-        group_strings = ["Group 1", "Group 2", "Group 3"]  # Set possible groups names
-        default_group_names = ", ".join(
-            group_strings[: int(selected_group)]
-        )  # Grab group names based on "selected_group"
+
         group_names = create_label_entry(
             parent=options,
             label_text="Group Names:",
-            width=35,
-            default_val=default_group_names,
+            width=20,
+            default_val="Control, Experimental",
             side="top",
-        )
-
-        def get_ylabel(spm_y_box):
-            spm_y_box.delete(0, "end")
-            result = (
-                filedialog.askopenfilename(
-                    title="Select Y-Labels Excel File",
-                    multiple=False,
-                    filetypes=(("Excel Files", "*.xlsx"),),
-                ),
-            )
-            spm_y_box.insert(0, result)
-
-        y_label = ttk.Label(options, text="Y-Label File:")
-        y_label.pack(side="top")
-        spm_y_box = ttk.Entry(options, width=35, justify="center")
-        spm_y_box.pack(side="top")
-        y_button = browse_in_button(
-            options,
-            "Browse",
-            lambda: get_ylabel(spm_y_box),
         )
 
         for widget in entry_frame.winfo_children():
@@ -1365,6 +1413,8 @@ def open_spm_tab():
             test_options = [
                 "One-way ANOVA",
                 "One-way Rep. Meas.",
+                "Two-way ANOVA",
+                "Two-way Rep. Meas.",
             ]
             entry_labels, entry_boxes, entry_buttons = create_entry_in(
                 entry_frame, ["Group 1 Data:", "Group 2 Data:", "Group 3 Data:"]
@@ -1377,34 +1427,54 @@ def open_spm_tab():
             entry_labels, entry_boxes, entry_buttons = create_entry_in(
                 entry_frame, ["Select group(s) first!"]
             )
+
         execute_function_button(
             entry_frame,
             "Perform Analysis",
-            lambda: tf.spm_analysis(
-                select_a_test=test_dropdown.get(),
-                group_names=group_names.get().split(","),
-                selected_group=selected_group,
-                g1_in=entry_boxes[0].get(),
-                g2_in=entry_boxes[1].get() if len(entry_boxes) > 1 else None,
-                g3_in=entry_boxes[2].get() if len(entry_boxes) > 2 else None,
-                output_path=output_box[0].get(),
-                alpha=alpha.get(),
-                equal_var=equal_var.get(),
-                two_tail=two_tail.get(),
-                dpi=spm_dpi.get(),
-                g1_color=dropdowns[0][1].get(),
-                g2_color=dropdowns[1][1].get() if len(dropdowns) > 1 else None,
-                g3_color=dropdowns[2][1].get() if len(dropdowns) > 2 else None,
-                plot_x_label=spm_x_label.get(),
-                plot_y_labels=spm_y_box.get(),
+            lambda: toolbox_spm(
+                entry_boxes,
+                output_box,
+                alpha,
+                equal_var,
+                two_tail,
+                dpi,
+                g1_color,
+                g2_color,
+                plot_x_label,
+                group_names,
             ),
         )
-
         for button in entry_buttons:
             button.configure(bg="#228B22", cursor="hand2")
         output_button[0].configure(bg="#0047AB", cursor="hand2")
         test_dropdown["values"] = test_options
         test_dropdown.set(test_options[0])
+
+    def toolbox_spm(
+        entry_boxes,
+        output_box,
+        alpha,
+        equal_var,
+        two_tail,
+        dpi,
+        g1_color,
+        g2_color,
+        plot_x_label,
+        group_names,
+    ):
+        bf.spm_2_group(
+            entry_boxes[0].get(),
+            entry_boxes[1].get(),
+            output_box[0].get(),
+            alpha=alpha.get(),
+            equal_var=equal_var.get(),
+            two_tail=two_tail.get(),
+            dpi=int(dpi.get()),
+            g1_color=g1_color.get(),
+            g2_color=g2_color.get(),
+            plot_x_label=plot_x_label.get(),
+            group_names=group_names.get(),
+        )
 
     spm_groups, group_dropdown = create_dropdown(
         dropdown_frame, "Groups:", ["1", "2", "3"]
@@ -1420,7 +1490,7 @@ def open_spm_tab():
 
 def return_to_main(main_tab):
     if not main_tab.tabs():
-        messagebox.showerror("No Tabs Open", "No tabs are currently open.")
+        messagebox.showinfo("No Tabs Open", "No tabs are currently open.")
         return
     result = messagebox.askyesno(
         "Main Tab", "Do you want to close all tabs?", icon="question"
@@ -1448,69 +1518,11 @@ def restart_program():
     )
 
 
-def check_tab_exists(tab_name):
-    for tab_id in main_tab.tabs():
-        tab_text = main_tab.tab(tab_id, "text")
-        if tab_text == tab_name:
-            main_tab.select(tab_id)
-            return True
-
-
-def reset_tab(tab_name):
-    reset_items = {
-        "Script Gen": open_scriptgen_tab,
-        "EMG": open_emg_tab,
-        "Batch": open_batch_tab,
-        "Normalize": open_normalize_tab,
-        "Quality Check": open_quality_check_tab,
-        "Event Pick": open_eventpick_tab,
-        "Event Compile": open_eventcompile_tab,
-        "Ensemble": open_ensemble_tab,
-        "SPM": open_spm_tab,
-    }
-    for tab_id in main_tab.tabs():
-        tab_text = main_tab.tab(tab_id, "text")
-        if tab_text == tab_name:
-            main_tab.forget(tab_id)
-            reset_items[tab_name]()
-            return
-
-
-def center_window(window, width, height):
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
-
-    x_coordinate = (screen_width - width) // 2
-    y_coordinate = (screen_height - height) // 2
-
-    window.geometry(f"{width}x{height}+{x_coordinate}+{y_coordinate}")
-
-
-def open_github(event):
-    result = messagebox.askokcancel(
-        "Open GitHub",
-        "This will open a web browser window. Do you want to open the GitHub page for this project?",
-    )
-    if not result:
-        return
-    webbrowser.open("https://github.com/WaltMenke/BiomechanicsToolbox")
-
-
-def open_linkedin(event):
-    result = messagebox.askokcancel(
-        "Open LinkedIn",
-        "This will open a web browser window. Do you want to open my LinkedIn page?",
-    )
-    if not result:
-        return
-    webbrowser.open("https://www.linkedin.com/in/walter-menke-172760104/")
-
-
 ##################### Save and Load Parameter Functions ######################
 def save_params(tab_name):
     save_functions = {
         "Script Gen": save_scriptgen,
-        "EMG": save_emg,
+        # "EMG": save_emg,
         "Batch": save_batch,
         "Normalize": save_normalize,
         "Quality Check": save_qualitycheck,
@@ -1533,8 +1545,8 @@ def load_params(tab_name):
         "Batch": load_batch,
         "Normalize": load_normalize,
         "Quality Check": load_qualitycheck,
-        # "Event Pick": load_eventpick,
-        # "Event Compile": load_eventcompile,
+        "Event Pick": load_eventpick,
+        "Event Compile": load_eventcompile,
         "Ensemble": load_ensemble,
         "SPM": load_spm,
     }
@@ -1551,10 +1563,95 @@ def load_params(tab_name):
         return
 
 
+def save_eventpick():
+    param_save = filedialog.asksaveasfilename(
+        title="Save EventPick Tab Parameters",
+        initialdir=param_dir if param_dir is not None else script_dir,
+        initialfile="EventPick_Params.txt",
+        defaultextension=".txt",
+        filetypes=(("TXT Files", "*.txt"),),
+    )
+    if not param_save:
+        return
+    selected_var_idxs = event_listbox.curselection()
+    selected_var_names = [event_listbox.get(idx) for idx in selected_var_idxs]
+    with open(param_save, "w") as file:
+        file.write(f"EventPick_Parameters\n")
+        file.write(f"Input Directory: {event_data_in.get()}\n")
+        file.write(f"Output Directory: {event_data_out.get()}\n")
+        file.write(f"Subject Number: {event_subject.get()}\n")
+        file.write(f"Condition Number: {event_condition.get()}\n")
+        file.write(f"Selected Variables: {selected_var_names}\n")
+    messagebox.showinfo("Save Successful", "EventPick tab parameters saved!")
+
+
+def load_eventpick():
+    param_file = filedialog.askopenfilename(
+        filetypes=(("TXT Files", "*.txt"),),
+        multiple=False,
+        initialdir=param_dir if param_dir is not None else script_dir,
+    )
+    if not param_file:
+        return
+    entry_mapping = {
+        "Input Directory": event_data_in,
+        "Output Directory": event_data_out,
+        "Subject Number": event_subject,
+        "Condition Number": event_condition,
+    }
+
+    def event_listbox_gen(normalized_data, listbox):
+        _, var_list, _, comp_list = bf.batch_reshape(normalized_data)
+        appended_vars = []
+        for i in range(len(var_list)):
+            current_xyz = comp_list[i % len(comp_list)]
+            appended_vars.append(
+                var_list[i] + " " + current_xyz + " (" + str(i + 1) + ")"
+            )
+        listbox.delete(0, tk.END)
+        for var in appended_vars:
+            listbox.insert(tk.END, var)
+        listbox_width = max(len(var) for var in appended_vars)
+        listbox.config(width=listbox_width - 1)
+
+    with open(param_file, "r") as file:
+        first_line = file.readline().strip()
+        if first_line != "EventPick_Parameters":
+            messagebox.showerror(
+                "Load Failed",
+                "First line does not match 'EventPick_Parameters'. Make sure the correct type of parameter file was selected.",
+            )
+            return
+        for line in file:
+            line = line.strip()
+            params = line.split(": ")
+            param_name = params[0].strip()
+            param_value = params[1].strip()
+
+            if param_name in entry_mapping:
+                entry_mapping[param_name].set(param_value)
+            elif param_name == "Selected Variables":
+                selected_variables = eval(param_value)
+
+    event_listbox_gen(event_data_in.get(), event_listbox)
+    if selected_variables:
+        event_listbox.selection_clear(0, tk.END)
+        for variable in selected_variables:
+            try:
+                idx = event_listbox.get(0, tk.END).index(variable)
+                event_listbox.selection_set(idx)
+            except ValueError:
+                messagebox.showwarning(
+                    "Load Failed",
+                    f"Variable {variable} not found in listbox. Make sure the input parameter file is correct. See the Toolbox documentation.",
+                )
+    messagebox.showinfo("Load Successful", "EventPick tab parameters loaded!")
+
+
 def save_scriptgen():
     param_save = filedialog.asksaveasfilename(
         title="Save ScriptGen Tab Parameters",
-        initialdir=".",
+        initialdir=param_dir if param_dir is not None else script_dir,
         initialfile="ScriptGen_Params.txt",
         defaultextension=".txt",
         filetypes=(("TXT Files", "*.txt"),),
@@ -1562,6 +1659,7 @@ def save_scriptgen():
     if not param_save:
         return
     with open(param_save, "w") as file:
+        file.write(f"ScriptGen_Parameters\n")
         file.write(f"Script Template File: {script_entry.get()}\n")
         file.write(f"Model Template File: {model_entry.get()}\n")
         file.write(f"Height-Weight Table: {heightweight_entry.get()}\n")
@@ -1574,6 +1672,7 @@ def load_scriptgen():
         title="Select Script Tab Parameters",
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
+        initialdir=param_dir if param_dir is not None else script_dir,
     )
     if not param_file:
         return
@@ -1585,6 +1684,13 @@ def load_scriptgen():
     }
 
     with open(param_file, "r") as file:
+        first_line = file.readline().strip()
+        if first_line != "ScriptGen_Parameters":
+            messagebox.showerror(
+                "Load Failed",
+                "First line does not match 'ScriptGen_Parameters'. Make sure the correct type of parameter file was selected.",
+            )
+            return
         for line in file:
             line = line.strip()
             params = line.split(": ")
@@ -1596,10 +1702,59 @@ def load_scriptgen():
         messagebox.showinfo("Load Successful", "ScriptGen tab parameters loaded!")
 
 
+def save_eventcompile():
+    param_save = filedialog.asksaveasfilename(
+        title="Save EventCompile Tab Parameters",
+        initialdir=param_dir if param_dir is not None else script_dir,
+        initialfile="EventCompile_Params.txt",
+        defaultextension=".txt",
+        filetypes=(("TXT Files", "*.txt"),),
+    )
+    if not param_save:
+        return
+    with open(param_save, "w") as file:
+        file.write(f"EventCompile_Parameters\n")
+        file.write(f"Events In Directory: {compile_in.get()}\n")
+        file.write(f"Events Out Directory: {compile_out.get()}\n")
+    messagebox.showinfo("Save Successful", "Event Compile tab parameters saved!")
+
+
+def load_eventcompile():
+    param_file = filedialog.askopenfilename(
+        title="Select EventCompile Tab Parameters",
+        filetypes=(("TXT Files", "*.txt"),),
+        multiple=False,
+        initialdir=param_dir if param_dir is not None else script_dir,
+    )
+    if not param_file:
+        return
+    entry_mapping = {
+        "Events In Directory": compile_in,
+        "Events Out Directory": compile_out,
+    }
+    with open(param_file, "r") as file:
+        first_line = file.readline().strip()
+        if first_line != "EventCompile_Parameters":
+            messagebox.showerror(
+                "Load Failed",
+                "First line does not match 'EventCompile_Parameters'. Make sure the correct type of parameter file was selected.",
+            )
+            return
+        for line in file:
+            line = line.strip()
+            params = line.split(": ")
+            param_name = params[0].strip()
+            param_value = params[1].strip()
+
+            if param_name in entry_mapping:
+                entry_mapping[param_name].set(param_value)
+    messagebox.showinfo("Load Successful", "Event Compile tab parameters loaded!")
+
+
 def save_batch():
     param_save = filedialog.asksaveasfilename(
         title="Save Batch Tab Parameters",
-        initialdir=".",
+        initialdir=param_dir if param_dir is not None else script_dir,
         initialfile="Batch_Params.txt",
         defaultextension=".txt",
         filetypes=(("TXT Files", "*.txt"),),
@@ -1607,6 +1762,7 @@ def save_batch():
     if not param_save:
         return
     with open(param_save, "w") as file:
+        file.write(f"Batch_Parameters\n")
         file.write(f"V3D Data Inputs: {batch_in_entry.get()}\n")
         file.write(f"Output Directory: {batch_out_entry.get()}\n")
         file.write(f"Trials per Subject: {batch_trials.get()}\n")
@@ -1622,6 +1778,7 @@ def load_batch():
         title="Select Batch Tab Parameters",
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
+        initialdir=param_dir if param_dir is not None else script_dir,
     )
     if not param_file:
         return
@@ -1635,6 +1792,13 @@ def load_batch():
         "Inputs Normalized": batch_normalized,
     }
     with open(param_file, "r") as file:
+        first_line = file.readline().strip()
+        if first_line != "Batch_Parameters":
+            messagebox.showerror(
+                "Load Failed",
+                "First line does not match 'Batch_Parameters'. Make sure the correct type of parameter file was selected.",
+            )
+            return
         for line in file:
             line = line.strip()
             params = line.split(": ")
@@ -1649,7 +1813,7 @@ def load_batch():
 def save_normalize():
     param_save = filedialog.asksaveasfilename(
         title="Save Normalize Tab Parameters",
-        initialdir=".",
+        initialdir=param_dir if param_dir is not None else script_dir,
         initialfile="Normalize_Params.txt",
         defaultextension=".txt",
         filetypes=(("TXT Files", "*.txt"),),
@@ -1657,6 +1821,7 @@ def save_normalize():
     if not param_save:
         return
     with open(param_save, "w") as file:
+        file.write(f"Normalize_Parameters\n")
         file.write(f"Batched Data File: {norm_in.get()}\n")
         file.write(f"Output Directory: {norm_out.get()}\n")
     messagebox.showinfo("Save Successful", "Normalize tab parameters saved!")
@@ -1667,11 +1832,19 @@ def load_normalize():
         title="Select Normalize Tab Parameters",
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
+        initialdir=param_dir if param_dir is not None else script_dir,
     )
     if not param_file:
         return
     entry_mapping = {"Batched Data File": norm_in, "Output Directory": norm_out}
     with open(param_file, "r") as file:
+        first_line = file.readline().strip()
+        if first_line != "Normalize_Parameters":
+            messagebox.showerror(
+                "Load Failed",
+                "First line does not match 'Normalize_Parameters'. Make sure the correct type of parameter file was selected.",
+            )
+            return
         for line in file:
             line = line.strip()
             params = line.split(": ")
@@ -1686,7 +1859,7 @@ def load_normalize():
 def save_qualitycheck():
     param_save = filedialog.asksaveasfilename(
         title="Save Quality Check Tab Parameters",
-        initialdir=".",
+        initialdir=param_dir if param_dir is not None else script_dir,
         initialfile="QualityCheck_Params.txt",
         defaultextension=".txt",
         filetypes=(("TXT Files", "*.txt"),),
@@ -1694,6 +1867,7 @@ def save_qualitycheck():
     if not param_save:
         return
     with open(param_save, "w") as file:
+        file.write(f"QualityCheck_Parameters\n")
         file.write(f"Batched Data Input Directory: {qual_in.get()}\n")
         file.write(f"Subject Numbers: {qual_subs.get()}\n")
     messagebox.showinfo("Save Successful", "Quality Check parameters saved!")
@@ -1704,6 +1878,7 @@ def load_qualitycheck():
         title="Select Quality Check Tab Parameters",
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
+        initialdir=param_dir if param_dir is not None else script_dir,
     )
     if not param_file:
         return
@@ -1712,6 +1887,13 @@ def load_qualitycheck():
         "Subject Numbers": qual_subs,
     }
     with open(param_file, "r") as file:
+        first_line = file.readline().strip()
+        if first_line != "QualityCheck_Parameters":
+            messagebox.showerror(
+                "Load Failed",
+                "First line does not match 'QualityCheck_Parameters'. Make sure the correct type of parameter file was selected.",
+            )
+            return
         for line in file:
             line = line.strip()
             params = line.split(": ")
@@ -1726,7 +1908,7 @@ def load_qualitycheck():
 def save_ensemble():
     param_save = filedialog.asksaveasfilename(
         title="Save Ensemble Tab Parameters",
-        initialdir=".",
+        initialdir=param_dir if param_dir is not None else script_dir,
         initialfile="Ensemble_Params.txt",
         defaultextension=".txt",
         filetypes=(("TXT Files", "*.txt"),),
@@ -1734,6 +1916,7 @@ def save_ensemble():
     if not param_save:
         return
     with open(param_save, "w") as file:
+        file.write(f"Ensemble_Parameters\n")
         file.write(f"Normalized Data File: {ensemble_in.get()}\n")
         file.write(f"Output Directory: {ensemble_out.get()}\n")
         file.write(f"Detected Variables: {ens_variables_listbox.get(0,'end')}\n")
@@ -1750,6 +1933,7 @@ def load_ensemble():
         title="Select Ensemble Tab Parameters",
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
+        initialdir=param_dir if param_dir is not None else script_dir,
     )
     if not param_file:
         return
@@ -1764,21 +1948,24 @@ def load_ensemble():
         "Y Line at 0?": y_line_var,
     }
     with open(param_file, "r") as file:
+        first_line = file.readline().strip()
+        if first_line != "Ensemble_Parameters":
+            messagebox.showerror(
+                "Load Failed",
+                "First line does not match 'Ensemble_Parameters'. Make sure the correct type of parameter file was selected.",
+            )
+            return
         for line in file:
             line = line.strip()
             params = line.split(": ")
             param_name = params[0].strip()
             param_value = params[1].strip()
-            print("param_name:", param_name)
-
             if param_name == "Detected Variables":
-                print("Worked for vars")
                 entries = ast.literal_eval(param_value)
                 ens_variables_listbox.delete(0, "end")
                 for entry in entries:
                     ens_variables_listbox.insert("end", entry)
             elif param_name == "Axes Titles":
-                print("Worked for axes")
                 entries = ast.literal_eval(param_value)
                 ens_axes_listbox.delete(0, "end")
                 for entry in entries:
@@ -1799,7 +1986,7 @@ def save_spm():
         return
     param_save = filedialog.asksaveasfilename(
         title="Save SPM Tab Parameters",
-        initialdir=".",
+        initialdir=param_dir if param_dir is not None else script_dir,
         initialfile="SPM_Params.txt",
         defaultextension=".txt",
         filetypes=(("TXT Files", "*.txt"),),
@@ -1807,6 +1994,7 @@ def save_spm():
     if not param_save:
         return
     with open(param_save, "w") as file:
+        file.write(f"SPM_Parameters\n")
         file.write(f"Groups: {group_dropdown.get()}\n")
         file.write(f"Available Tests: {test_dropdown.get()}\n")
         file.write(f"Group 1 Data: {entry_boxes[0].get()}\n")
@@ -1855,6 +2043,7 @@ def load_spm():
         title="Select SPM Tab Parameters",
         filetypes=(("TXT Files", "*.txt"),),
         multiple=False,
+        initialdir=param_dir if param_dir is not None else script_dir,
     )
     if not param_file:
         return
@@ -1878,6 +2067,13 @@ def load_spm():
     }
 
     with open(param_file, "r") as file:
+        first_line = file.readline().strip()
+        if first_line != "SPM_Parameters":
+            messagebox.showerror(
+                "Load Failed",
+                "First line does not match 'SPM_Parameters'. Make sure the correct type of parameter file was selected.",
+            )
+            return
         for line in file:
             line = line.strip()
             params = line.split(": ")
@@ -1922,11 +2118,12 @@ def load_spm():
 def handle_save_params():
     try:
         save_params(main_tab.tab(main_tab.select(), "text"))
-    except Exception:
+    except Exception as e:
         messagebox.showerror(
             "Save Failed",
-            "Cannot save tab parameters without a tab open. Please open a tab and try again.",
+            f"An error occurred- you may not have a tab open.\n\nSee error log:\n{e}.",
         )
+        return
 
 
 def handle_load_params():
@@ -1935,25 +2132,55 @@ def handle_load_params():
     except Exception as e:
         messagebox.showerror(
             "Load Failed",
-            "Cannot load tab parameters without a tab open. Please open a tab and try again.",
+            f"An error occurred- you may not have a tab open.\n\nSee error log:\n{e}.",
         )
+        return
 
 
-##################### Main Menu Creation ######################
-root = ttk.Window()
-root.title("Biomechanics Toolbox")
-root.pack_propagate(0)
-main_tab = ttk.Notebook(root)
-main_tab.pack(fill="both", expand=True)
+def set_param_dir():
+    global param_dir
+    param_dir = filedialog.askdirectory(
+        title="Select Parameter Files Directory",
+        initialdir=script_dir,
+    )
+    messagebox.showinfo(
+        "Directory Set",
+        f"Parameters default directory set to:\n\t{param_dir}\n\nThis will be maintained until you close the program.",
+    )
+    if not param_dir:
+        messagebox.showinfo(
+            "Directory Not Set",
+            "Parameters default directory not set. Operation cancelled by user.",
+        )
+        return
 
-center_window(root, 750, 800)
-root.iconbitmap("BT_Icon.ico")
-root.iconbitmap(default="BT_Icon.ico")
+
+def check_tab_exists(tab_name):
+    for tab_id in main_tab.tabs():
+        tab_text = main_tab.tab(tab_id, "text")
+        if tab_text == tab_name:
+            main_tab.select(tab_id)
+            return True
 
 
-def add_menu_items(menu, items):
-    for label, command in items.items():
-        menu.add_command(label=label, command=command)
+def reset_tab(tab_name):
+    reset_items = {
+        "Script Gen": open_scriptgen_tab,
+        "EMG": open_emg_tab,
+        "Batch": open_batch_tab,
+        "Normalize": open_normalize_tab,
+        "Quality Check": open_quality_check_tab,
+        "Event Pick": open_eventpick_tab,
+        "Event Compile": open_eventcompile_tab,
+        "Ensemble": open_ensemble_tab,
+        "SPM": open_spm_tab,
+    }
+    for tab_id in main_tab.tabs():
+        tab_text = main_tab.tab(tab_id, "text")
+        if tab_text == tab_name:
+            main_tab.forget(tab_id)
+            reset_items[tab_name]()
+            return
 
 
 def close_current_tab():
@@ -1962,6 +2189,60 @@ def close_current_tab():
         return
     main_tab.forget(main_tab.select())
 
+
+def add_menu_items(menu, items):
+    for label, command in items.items():
+        menu.add_command(label=label, command=command)
+
+
+def center_window(window, width, height):
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+
+    x_coordinate = (screen_width - width) // 2
+    y_coordinate = (screen_height - height) // 2
+
+    window.geometry(f"{width}x{height}+{x_coordinate}+{y_coordinate}")
+
+
+def main_close_confirm():
+    if messagebox.askyesno(
+        "Quit",
+        "Are you sure you want to quit?",
+    ):
+        root.destroy()
+
+
+def open_github(event):
+    webbrowser.open("https://github.com/users/WaltMenke/projects/2")
+
+
+def open_linkedin(event):
+    webbrowser.open("https://www.linkedin.com/in/walter-menke-172760104/")
+
+
+root = ttk.Window()
+root.title("Biomechanics Toolbox")
+root.pack_propagate(0)
+main_tab = ttk.Notebook(root)
+main_tab.pack(fill="both", expand=True)
+
+color_choices = [
+    "Black",
+    "Blue",
+    "Red",
+    "Green",
+    "Purple",
+    "Orange",
+    "Yellow",
+    "Cyan",
+    "Magenta",
+    "Grey",
+]
+
+center_window(root, 750, 800)
+root.iconbitmap("BT_Icon.ico")
+root.iconbitmap(default="BT_Icon.ico")
 
 file_menu_items = {
     "Reset Tab Entries": lambda: reset_tab(main_tab.tab(main_tab.select(), "text")),
@@ -1972,6 +2253,7 @@ file_menu_items = {
 }
 
 parameter_menu_items = {
+    "Set Param Directory": lambda: set_param_dir(),
     "Save Tab Params": lambda: handle_save_params(),
     "Load Tab Params": lambda: handle_load_params(),
 }
@@ -2005,7 +2287,12 @@ for menu_label, menu_items in menus.items():
 root.config(menu=menubar)
 
 label_configurations = [
-    ("Biomechanics Toolbox", ("Helvetica", 14, "bold"), "#A52A2A", 35),
+    (
+        "Biomechanics Toolbox\n                v1.0.0",
+        ("Helvetica", 14, "bold"),
+        "#A52A2A",
+        35,
+    ),
     (
         "  This program was developed to facilitate a more efficient workflow for\n\tbiomechanics data processing and presentation.",
         ("Helvetica", 10),
@@ -2013,13 +2300,19 @@ label_configurations = [
         5,
     ),
     (
-        "    1. V3D Script and Model Generation\n    2. EMG Processing\n    3. Batch Processing\n    4. Normalization\n    5. Data Quality Checks\n    6. Event Picking\n    7. Event Compiling\n    8. Ensemble Curves\n    9. SPM Analysis",
+        "   1. Script and Model Generation\n    2. EMG Processing (in progress)\n    3. Batch Processing\n    4. Normalization\n    5. Data Quality Checks\n    6. Event Picking\n    7. Event Compiling\n    8. Ensemble Curves\n    9. SPM Analysis",
         ("Helvetica", 10),
         None,
         5,
     ),
     (
-        "    This program requires the following packages to be installed:\n\n\t - matplotlib\t - numpy\t\t - os\n\t - pandas\t\t - re\t\t - subprocess\n\t - sys\t\t - tkinter\t\t - ttkbootstrap\n\t - spm1d\t\t - webbrowser\t - openpyxl\n\n    A full list of required packages and their versions can be found\n\t in the documentation (ToolboxRequirements.txt)",
+        "\tThe full list of required packages and their versions can be found\n\tin the documentation or installed using the following command:\n\n\t\t   pip install -r ToolboxRequirements.txt\n\n  If you're lost- press the Help button in the ribbon to access the documentation!",
+        ("Helvetica", 10),
+        None,
+        5,
+    ),
+    (
+        "",
         ("Helvetica", 10),
         None,
         5,
@@ -2051,9 +2344,10 @@ github_label.bind("<Button-1>", open_github)
 
 author_label = ttk.Label(
     root,
-    text="\t\t      © Copyright 2023, Walter Menke\nCreated in Python v3.11.6 (64-bit) on Windows 11 in Visual Studio Code v1.84.2.",
+    text="\t          © Copyright 2023-2024, Walter Menke\nCreated in Python v3.12.2 on Windows 11 in Visual Studio Code v1.84.2.",
     font=("Helvetica", 8),
 )
 author_label.pack(padx=5, pady=2, anchor="s")
+root.protocol("WM_DELETE_WINDOW", main_close_confirm)
 
 root.mainloop()
