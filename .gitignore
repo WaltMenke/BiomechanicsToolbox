@@ -1,0 +1,7 @@
+__pycache__
+Documentation/DocumentationImages/
+Documentation
+.vscode
+laptop_venv
+desktop_venv
+venv
