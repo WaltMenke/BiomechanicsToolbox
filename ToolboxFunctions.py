@@ -1,8 +1,7 @@
 import os
 import sys
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, filedialog, PhotoImage, messagebox, simpledialog
 import ttkbootstrap as ttk
 import numpy as np
 import matplotlib.pyplot as plt
@@ -393,7 +392,7 @@ def batch(
             data_shape = output.shape
             output_flat = output.reshape(-1, output.shape[-1])
             save_path = os.path.join(output_directory, file_savename)
-            if os.path.exists(file_path):
+            if os.path.isfile(save_path):
                 response = tk.messagebox.askokcancel(
                     "File Exists",
                     f"The file '{file_savename}' already exists. Do you want to overwrite it?",
@@ -455,7 +454,7 @@ def batch(
             data_shape = output.shape
             output_flat = output.reshape(-1, output.shape[-1])
             save_path = os.path.join(output_directory, file_savename)
-            if os.path.exists(file_path):
+            if os.path.isfile(save_path):
                 response = tk.messagebox.askokcancel(
                     "File Exists",
                     f"The file '{file_savename}' already exists. Do you want to overwrite it?",
@@ -513,7 +512,7 @@ def quality_check(batch_input: str, subject_idx: int) -> tuple[plt.Figure, plt.A
             raise ValueError("qual_check_in must be a 3D array.")
         if qual_check_in.shape[1] % len(var_list) != 0:
             raise ValueError(
-                f"qual_check_in column size ({qual_check_in.shape[1]}) must be divisible by number of variables ({len(var_list)}) to determine trial amount."
+                f"Data input column size ({qual_check_in.shape[1]}) must be divisible by number of variables ({len(var_list)}) to determine trial amount. Ensure each trial has the same number of variables."
             )
         if qual_check_in.shape[1] % len(var_list) != 0:
             raise ValueError(
@@ -529,7 +528,9 @@ def quality_check(batch_input: str, subject_idx: int) -> tuple[plt.Figure, plt.A
             raise ValueError(
                 f"Components must be a list of length 1-3. Provided list was of length {len(comp_split)}."
             )
-        num_3x3_plots = int(len(var_list) / 9)  # Determines number of subplots
+        num_3x3_plots = len(var_list) // 9
+        if len(var_list) % 9 != 0:  # Checks for floats and rounds up
+            num_3x3_plots += 1
 
         start_col = 0  # Initialize the starting column for the first set of subplots
         plot_list = []  # Initialize an empty list to store the plots
@@ -547,7 +548,7 @@ def quality_check(batch_input: str, subject_idx: int) -> tuple[plt.Figure, plt.A
             fig, axes = plt.subplots(3, 3, figsize=(10, 8))  # Create subplots
             # fig.tight_layout()
             fig.suptitle(
-                f"Subject Number {subject_idx+1} from '{true_file}' - Page {j+1}"
+                f"File Number {subject_idx+1} from '{true_file}' - Page {j+1}"
             )  # Add figure title
             axes = axes.ravel()  # Flatten the axes
             for i, ax in enumerate(axes):  # Iterate through the axes
@@ -555,12 +556,16 @@ def quality_check(batch_input: str, subject_idx: int) -> tuple[plt.Figure, plt.A
                     i % components
                 )  # Determine which component to add to plot title
                 start_idx = start_col + i
-                ax.plot(
-                    qual_check_in[:, start_idx :: len(var_list), subject_idx]
-                )  # Plot the data for current variable and all trials
-                ax.set_title(
-                    f"{var_list[start_idx]} {comp_list[plot_comps_idx]}"
-                )  # Add title
+                try:
+                    ax.set_title(
+                        f"{var_list[start_idx]} {comp_list[plot_comps_idx]}"
+                    )  # Add title
+                    ax.plot(
+                        qual_check_in[:, start_idx :: len(var_list), subject_idx]
+                    )  # Plot the data for current variable and all trials
+                except IndexError:
+                    ax.plot([], [])  # set empty plot when end of list is reached
+                    break
                 plt.subplots_adjust(wspace=0.4, hspace=0.4, top=0.9)  # Adjust spacing
 
             start_col += 9  # Update the starting column for the next set of subplots
@@ -731,7 +736,7 @@ def normalize(batched_file_location: str, output_file_location: str) -> None:
     output_path = os.path.join(output_file_location, output_original)
     output_path = output_path.replace(os.path.sep, "/")
 
-    if os.path.exists(output_path):
+    if os.path.isfile(output_path):
         result = messagebox.askyesno(
             "File Exists", "The file already exists. Do you want to overwrite it?"
         )
@@ -941,7 +946,7 @@ def spm_analysis(
         Numpy, spm1d
 
     SEE ALSO:
-        v3d_batch
+        batch
 
     Created by Walt Menke (2023) - wmenke597@gmail.com
     """
@@ -968,19 +973,22 @@ def spm_analysis(
             plot_y_labels = None
     else:
         plot_y_labels = pd.read_excel(plot_y_labels, header=None)
-
     try:
-        if any(path is None or path == "" for path in (g1_in, g2_in, g3_in)):
-            raise ValueError("One or more input file paths are not specified.")
-        if output_path is None or output_path == "":
-            raise ValueError("Output directory path is not specified.")
-        if not any(os.path.exists(path) for path in (g1_in, g2_in, g3_in)):
-            raise FileNotFoundError("One or more input files do not exist.")
+        # if any(path is None or path == "" for path in (g1_in, g2_in, g3_in)):
+        #     raise ValueError("One or more input file paths are not specified.")
+        # if output_path is None or output_path == "":
+        #     raise ValueError("Output directory path is not specified.")
+        # if not any(os.path.exists(path) for path in (g1_in, g2_in, g3_in)):
+        #     raise FileNotFoundError("One or more input files do not exist.")
         if not os.path.exists(output_path):
             raise FileNotFoundError("Output directory does not exist.")
-        if 0 > alpha < 1:
+        if 0 > float(alpha) < 1:
             raise ValueError("Significance level must be between 0 and 1.")
-        if 299 > dpi < 801:
+        try:
+            int(dpi)
+        except TypeError:
+            raise TypeError("DPI must be an integer.")
+        if 299 > int(dpi) < 801:
             raise ValueError("DPI value must be greater than 300 and less than 800.")
 
         for group in range(1, group_count + 1):
@@ -998,10 +1006,13 @@ def spm_analysis(
                     raise ValueError(
                         "Number of variables not divisible by the number of components."
                     )
-                if len(group_var_list) != len(plot_y_labels):
-                    raise ValueError(
-                        "Number of variables not equal to number of plot Y-labels."
-                    )
+                try:
+                    if len(group_var_list) != len(plot_y_labels):
+                        raise ValueError(
+                            "Number of variables not equal to number of plot Y-labels."
+                        )
+                except:
+                    pass
 
                 norm_cubes.append(group_norm_cube)
                 var_list = stripped_lists
@@ -1016,6 +1027,7 @@ def spm_analysis(
             raise ValueError(
                 "Data for the SPM functions must be normalized to 101 points. Check all group(s) input data shape."
             )
+
         raw_var_list = [
             f"{original} {xyz}"
             for original, xyz in zip(
@@ -1040,10 +1052,9 @@ def spm_analysis(
 
         output_dir = output_path
         pdf_out = os.path.join(output_dir, "All_SPM_Plots.pdf")
-
         with PdfPages(pdf_out) as pdf:
             tiff_path = os.path.join(output_dir, f"{true_var_list[0]}.tiff")
-            if os.path.exists(tiff_path):
+            if os.path.isfile(tiff_path):
                 response = messagebox.askyesno(
                     "File Already Exists",
                     f"It looks like the .TIFF files already exist. Do you want to overwrite them?",
@@ -1088,8 +1099,10 @@ def spm_analysis(
                     )
                 ax.axhline(y=0, color="k", linestyle=":")
                 ax.set_xlabel(plot_x_label)
-                if not plot_y_labels == None:
+                try:
                     ax.set_ylabel(plot_y_labels.iloc[i, 0])
+                except AttributeError:
+                    pass
                 ax.set_title(f"{true_var_list[i]}")
 
                 ax = axes[1]
@@ -1116,6 +1129,9 @@ def spm_analysis(
         )
     except ValueError as e:
         tk.messagebox.showerror("Value Error", str(e))
+        return
+    except TypeError as e:
+        tk.messagebox.showerror("Type Error", str(e))
         return
     except FileNotFoundError as e:
         tk.messagebox.showerror("File Not Found Error", str(e))

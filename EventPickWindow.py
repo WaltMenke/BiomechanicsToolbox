@@ -583,11 +583,11 @@ def previous_plot(plots_file, ax):
     iterate_plot(plots_file, ax)
 
 
-def save_to_csv(file_path, matrices, var_titles, event_type):
+def save_to_csv(file_path, matrices, var_titles):
     with open(file_path, "w", newline="") as csvfile:
         matrix_delim = ["NEXT_MATRIX"]
         writer = csv.writer(csvfile)
-        writer.writerow([f"S{subject_in}_C{condition_in}_{event_type}"])
+        writer.writerow([f"S{subject_in}_C{condition_in}"])
         writer.writerow(
             ["Variable Metadata (Each repeat of variable indicates trial amount):"]
         )
@@ -643,13 +643,11 @@ def save_all_events(
                 max_file_path,
                 [all_maxval_matrix, all_maxidx_matrix, all_maxper_matrix],
                 var_titles,
-                "Maxima",
             )
             save_to_csv(
                 min_file_path,
                 [all_minval_matrix, all_minidx_matrix, all_minper_matrix],
                 var_titles,
-                "Minima",
             )
             return_to_toolbox()
         else:
