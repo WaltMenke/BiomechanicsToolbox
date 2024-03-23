@@ -14,6 +14,7 @@ import re
 import webbrowser
 import ToolboxFunctions as bf
 import ast
+import webbrowser
 from PIL import Image, ImageTk
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -23,8 +24,15 @@ python_exe = sys.executable
 
 
 def open_program_docs():
-    help_file_path = "BiomechanicsToolbox.docx"
-    os.startfile(help_file_path)
+    webpage = "https://github.com/WaltMenke/BiomechanicsToolbox/blob/main/BiomechanicsToolbox.docx"
+    answer = messagebox.askyesno(
+        "Opening Web Browser",
+        f"Do you want to navigate to the followng webpage?\n{webpage}",
+    )
+    if answer:
+        webbrowser.open(webpage)
+    else:
+        return
 
 
 def create_label_entry(
@@ -541,8 +549,6 @@ def open_quality_check_tab():
         qual_window = ttk.Window()
         qual_window.resizable(True, True)
         qual_window.title("Biomechanics Toolbox - Quality Checking")
-        qual_window.iconbitmap("BT_Icon.ico")
-        qual_window.iconbitmap(default="BT_Icon.ico")
         center_window(qual_window, 1100, 1100)
 
         canvas = QualityPlot(qual_window, plots_out)
@@ -2195,8 +2201,6 @@ color_choices = [
 ]
 
 center_window(root, 750, 800)
-root.iconbitmap("BT_Icon.ico")
-root.iconbitmap(default="BT_Icon.ico")
 
 file_menu_items = {
     "Reset Tab Entries": lambda: reset_tab(main_tab.tab(main_tab.select(), "text")),
