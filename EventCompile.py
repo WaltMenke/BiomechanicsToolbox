@@ -379,7 +379,7 @@ for matrix, avg_list, std_dev_list in [
 workbook = Workbook()
 for condition, _ in maxima_averages.items():
     # Create a new sheet for the condition
-    sheet = workbook.create_sheet(title=condition)
+    sheet = workbook.create_sheet(title="C" + str(condition))
 
     # Write row names as headers
     variable_names = sorted(variable_names)  # Ensure alphabetical order
