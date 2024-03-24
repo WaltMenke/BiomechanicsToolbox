@@ -18,3 +18,6 @@ If you would like to use an executable version of the program instead of running
 
 Alternatively, you can download the Github folder 'BuildExecutable' from the repository, navigate to that directory from a terminal/powershell and run the following code to generate an executable locally.
 `pyinstaller --onefile -i"BT_Icon.ico" BiomechanicsToolbox.py`
+
+## Example Files
+As of March 24th, 2024 there is a folder containing example input and output files for multiple functions. This will allow you to test the function inputs, understand the data/file structures required by the program, and look at expected outputs from these files.
