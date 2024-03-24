@@ -108,7 +108,13 @@ def trim_header(filename: str) -> npt.NDArray:
         skip_header=5,
         dtype=float,
     )
-    file = file[:, 1:]
+    try:
+        file = file[:, 1:]
+    except IndexError:
+        messagebox.showerror(
+            "Error",
+            "The file does not appear to be a valid V3D output file.\nPlease check the file inputs and/or search string and try again.\nTry removing any unnecessary files from the input directory.",
+        )
     return file
 
 
@@ -242,12 +248,9 @@ def generate_scripts(
             "Generated Scripts",
             f"Scripts and Models have been generated here: {output_path}",
         )
-    except FileNotFoundError as e:
-        tk.messagebox.showerror("File Not Found", str(e))
-        return
-    except ValueError as e:
-        tk.messagebox.showerror("Value Error", str(e))
-        return
+    except (FileNotFoundError, ValueError) as e:
+        tk.messagebox.showerror("Error", str(e))
+        return True
 
 
 def batch(
@@ -471,18 +474,9 @@ def batch(
                 file.write(f"({X},{Y},{Z})\n")
                 np.savetxt(file, output_flat, fmt="%.8f")
             return
-    except FileNotFoundError as e:
-        tk.messagebox.showerror("File Not Found", str(e))
-        return
-    except ValueError as e:
-        tk.messagebox.showerror("Value Error", str(e))
-        return
-    except TypeError as e:
-        tk.messagebox.showerror("Type Error", str(e))
-        return
-    except NotADirectoryError as e:
-        tk.messagebox.showerror("Directory Error", str(e))
-        return
+    except (FileNotFoundError, ValueError, TypeError, NotADirectoryError) as e:
+        tk.messagebox.showerror("Error", str(e))
+        return True  # Returns true to the main script to halt execution
 
 
 def quality_check(batch_input: str, subject_idx: int) -> tuple[plt.Figure, plt.Axes]:
@@ -573,17 +567,8 @@ def quality_check(batch_input: str, subject_idx: int) -> tuple[plt.Figure, plt.A
             plt.figlegend(legend_labels, loc="lower center", ncol=5)  # Add the legend
 
         return plot_list
-    except FileNotFoundError as e:
-        tk.messagebox.showerror("File Not Found", str(e))
-        return
-    except ValueError as e:
-        tk.messagebox.showerror("Value Error", str(e))
-        return
-    except TypeError as e:
-        tk.messagebox.showerror("Type Error", str(e))
-        return
-    except NotADirectoryError as e:
-        tk.messagebox.showerror("Directory Error", str(e))
+    except (FileNotFoundError, ValueError, TypeError, NotADirectoryError) as e:
+        tk.messagebox.showerror("Error", str(e))
         return
 
 
@@ -974,12 +959,6 @@ def spm_analysis(
     else:
         plot_y_labels = pd.read_excel(plot_y_labels, header=None)
     try:
-        # if any(path is None or path == "" for path in (g1_in, g2_in, g3_in)):
-        #     raise ValueError("One or more input file paths are not specified.")
-        # if output_path is None or output_path == "":
-        #     raise ValueError("Output directory path is not specified.")
-        # if not any(os.path.exists(path) for path in (g1_in, g2_in, g3_in)):
-        #     raise FileNotFoundError("One or more input files do not exist.")
         if not os.path.exists(output_path):
             raise FileNotFoundError("Output directory does not exist.")
         if 0 > float(alpha) < 1:
@@ -1021,7 +1000,7 @@ def spm_analysis(
         cube_shape_check = norm_cubes[0].shape
         if any(cube.shape != cube_shape_check for cube in norm_cubes):
             raise ValueError(
-                "Inconsistent norm_cubes shapes across iterations. Check all group(s) input data shape."
+                "Inconsistent norm_cubes shapes across iterations. Check all group(s) input data shape at the top of the Batch."
             )
         if any(cube.shape[0] != 101 for cube in norm_cubes):
             raise ValueError(

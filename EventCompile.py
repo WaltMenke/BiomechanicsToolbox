@@ -35,32 +35,32 @@ def replace_nan(value):
 def generate_value_rows(variable_names):
     value_rows = []
     variable_count = len(variable_names)
-    for _ in range(3):  # Repeat the cycle 3 times
+    for _ in range(3):
         for variable in variable_names:
             for event in events:
                 value_rows.append([variable, "Value", event])
-    return value_rows[: variable_count * 3]  # Limit to 3 rows per variable
+    return value_rows[: variable_count * 3]
 
 
 # Function to generate row names for Index
 def generate_index_rows(variable_names):
     index_rows = []
     variable_count = len(variable_names)
-    for _ in range(3):  # Repeat the cycle 3 times
+    for _ in range(3):
         for variable in variable_names:
             for event in events:
                 index_rows.append([variable, "Index", event])
-    return index_rows[: variable_count * 3]  # Limit to 3 rows per variable
+    return index_rows[: variable_count * 3]
 
 
 def generate_per_loc_rows(variable_names):
     per_loc_rows = []
     variable_count = len(variable_names)
-    for _ in range(3):  # Repeat the cycle 3 times
+    for _ in range(3):
         for variable in variable_names:
             for event in events:
                 per_loc_rows.append([variable, "Per_Loc", event])
-    return per_loc_rows[: variable_count * 3]  # Limit to 3 rows per variable
+    return per_loc_rows[: variable_count * 3]
 
 
 # Subprocess inputs from main window
@@ -74,7 +74,7 @@ compile_out = sys.argv[2]
 
 result = messagebox.askyesno(
     "Compile",
-    "Before compiling, are you sure the input directory only contains properly named CSV Event Output files?",
+    "Before compiling, are you sure the input directory only contains properly named CSV Event Output files?\n\nNaming schema should follow: 'S1_C1_Maxima.csv', 'S1_C1_Minima.csv', etc.",
     icon="question",
 )
 if not result:
@@ -101,10 +101,10 @@ headers = [
     "VARIABLE",
     "TYPE",
     "NUMBER",
-    "Maxima Averages",
-    "Maxima Standard Deviations",
-    "Minima Averages",
-    "Minima Standard Deviations",
+    "Maxima Avg",
+    "Maxima Stdev",
+    "Minima Avg",
+    "Minima Stdev",
 ]
 
 pattern = r"^S\d{1,2}_C\d{1,2}_(Maxima|Minima)\.csv$"  # Ensures naming structure is like 'S1_C1_Maxima.csv'
@@ -117,7 +117,7 @@ else:
     pass
 
 ref_file = relevant_files[0]
-cond_ref = ref_file.split("_")[1][1:]  # Extracts the number after _C
+cond_ref = ref_file.split("_")[1][1:]
 
 present_conditions = [cond_ref]
 for file in relevant_files:
@@ -166,13 +166,11 @@ for condition, files in files_by_condition.items():
     reference_third_line = None
     for file_name in files:
         file_path = os.path.join(compile_in, file_name)
-        prefix = file_name.split(".")[
-            0
-        ]  # Extract everything before .csv in the filename
+        prefix = file_name.split(".")[0]
         with open(file_path, "r", newline="") as csv_file:
             csv_reader = csv.reader(csv_file)
-            first_line_str = "".join(prefix)  # Convert the list to a string
-            prefix_without_extension = prefix.split(".")[0]  # Remove the file extension
+            first_line_str = "".join(prefix)
+            prefix_without_extension = prefix.split(".")[0]
             if not first_line_str == prefix_without_extension:
                 messagebox.showerror(
                     "Warning",
@@ -180,8 +178,8 @@ for condition, files in files_by_condition.items():
                 )
                 break
             else:
-                next(csv_reader)  # Skip the first line
-                next(csv_reader)  # Skip the second line
+                next(csv_reader)
+                next(csv_reader)
                 third_line = next(csv_reader)
                 if reference_third_line is None:
                     ref_file = file_name
@@ -195,9 +193,7 @@ for condition, files in files_by_condition.items():
                         break
 lists = [ast.literal_eval(entry) for entry in reference_third_line if entry]
 flat_entries = [item for sublist in lists for item in sublist]
-variable_names = list(
-    OrderedDict.fromkeys(flat_entries)
-)  # Maintains order of variable names
+variable_names = list(OrderedDict.fromkeys(flat_entries))
 
 for condition, files in files_by_condition.items():
     maxima_stats = []
@@ -255,7 +251,6 @@ for condition, maxima_stats in maxima_stats_by_condition.items():
             reorg_min[condition].extend(selected_minima_rows)
 
 workbook = Workbook()
-
 for condition, max_data in reorg_max.items():
     sheet = workbook.create_sheet(title="C" + str(condition))
 
@@ -268,7 +263,6 @@ for condition, max_data in reorg_max.items():
         for subject_idx, subject in enumerate(sub_count):
             for variable_idx, variable in enumerate(variable_names):
                 for event in range(1, num_events + 1):
-                    # Write subject, variable, type, number
                     if number_counter == 1:
                         sheet.append(
                             [
@@ -324,11 +318,8 @@ for condition, max_data in reorg_max.items():
     # Write minima data
     min_data = reorg_min[condition]
     for i, min_row in enumerate(min_data, start=2):  # Start from the correct row index
-        for j, value in enumerate(
-            min_row, start=7
-        ):  # Starting from column 9 for minima
+        for j, value in enumerate(min_row, start=7):
             sheet.cell(row=i, column=j).value = replace_nan(value)
-# Remove the default sheet created by openpyxl
 workbook.remove(workbook.active)
 savepath = filedialog.asksaveasfilename(
     defaultextension=".xlsx",
@@ -365,43 +356,37 @@ for matrix, avg_list, std_dev_list in [
                     if not np.isnan(avg_value):
                         avg_values.append(avg_value)
 
-                if avg_values:  # Check if avg_values is not empty
+                if avg_values:
                     row_avg = np.nanmean(avg_values)
                     row_std = np.nanstd(avg_values)
 
                     avg_list[condition].append(row_avg)
                     std_dev_list[condition].append(row_std)
                 else:
-                    # Handle case when avg_values is empty
                     avg_list[condition].append(np.nan)
                     std_dev_list[condition].append(np.nan)
 
 workbook = Workbook()
 for condition, _ in maxima_averages.items():
-    # Create a new sheet for the condition
     sheet = workbook.create_sheet(title="C" + str(condition))
 
-    # Write row names as headers
-    variable_names = sorted(variable_names)  # Ensure alphabetical order
     value_rows = generate_value_rows(variable_names)
     index_rows = generate_index_rows(variable_names)
     per_loc_rows = generate_per_loc_rows(variable_names)
     all_rows = value_rows + index_rows + per_loc_rows
-    for i, row_name in enumerate(all_rows, start=2):  # Start from row 2
+    for i, row_name in enumerate(all_rows, start=2):
         sheet.cell(row=i, column=1).value = row_name[0]
         sheet.cell(row=i, column=2).value = row_name[1]
         sheet.cell(row=i, column=3).value = row_name[2]
 
-        # Write headers for data
-    sheet.cell(row=1, column=1).value = "VARIABLE"
-    sheet.cell(row=1, column=2).value = "TYPE"
-    sheet.cell(row=1, column=3).value = "NUMBER"
-    sheet.cell(row=1, column=4).value = "Maxima Averages"
-    sheet.cell(row=1, column=5).value = "Maxima Standard Deviations"
-    sheet.cell(row=1, column=6).value = "Minima Averages"
-    sheet.cell(row=1, column=7).value = "Minima Standard Deviations"
+    sheet.cell(row=1, column=1).value = headers[1]
+    sheet.cell(row=1, column=2).value = headers[2]
+    sheet.cell(row=1, column=3).value = headers[3]
+    sheet.cell(row=1, column=4).value = headers[4]
+    sheet.cell(row=1, column=5).value = headers[5]
+    sheet.cell(row=1, column=6).value = headers[6]
+    sheet.cell(row=1, column=7).value = headers[7]
 
-    # Write data
     for i in range(len(maxima_averages[condition])):
         max_avg = replace_nan(maxima_averages[condition][i])
         max_std = replace_nan(maxima_std_devs[condition][i])
@@ -425,5 +410,5 @@ else:
 workbook.close()
 messagebox.showinfo(
     "Save Successful",
-    f"Events successfully compiled. Returning to the Biomechanics Toolbox...",
+    f"Events successfully compiled!",
 )

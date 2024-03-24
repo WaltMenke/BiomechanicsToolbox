@@ -1,0 +1,33 @@
+S1_C1
+Variable Metadata (Each repeat of variable indicates trial amount):
+"['RightAnkleAngle_X', 'RightAnkleAngle_X', 'RightAnkleAngle_X', 'RightAnkleAngle_X', 'RightAnkleAngle_X', 'RightAnkleMoment_X', 'RightAnkleMoment_X', 'RightAnkleMoment_X', 'RightAnkleMoment_X', 'RightAnkleMoment_X', 'RightAnklePower_X', 'RightAnklePower_X', 'RightAnklePower_X', 'RightAnklePower_X', 'RightAnklePower_X']"
+NEXT_MATRIX
+10.44966,8.560676,12.254498,13.414792,9.053433
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+0.313448,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+0.110988,0.026649,0.239797,0.224001,0.151997
+3.566675,3.430447,3.11862,2.790011,2.410905
+nan,nan,nan,nan,nan
+NEXT_MATRIX
+69.0,70.0,72.0,72.0,69.0
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+11.0,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+20.0,21.0,22.0,24.0,19.0
+87.0,88.0,87.0,85.0,88.0
+nan,nan,nan,nan,nan
+NEXT_MATRIX
+68.31683168316832,69.3069306930693,71.28712871287128,71.28712871287128,68.31683168316832
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+10.891089108910892,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+19.801980198019802,20.792079207920793,21.782178217821784,23.762376237623762,18.81188118811881
+86.13861386138613,87.12871287128714,86.13861386138613,84.15841584158416,87.12871287128714
+nan,nan,nan,nan,nan

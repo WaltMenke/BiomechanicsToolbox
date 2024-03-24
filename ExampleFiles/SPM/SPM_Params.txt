@@ -1,0 +1,10 @@
+SPM_Parameters
+Groups: 2
+Available Tests: Paired t test
+Group 1 Data: 
+Group 2 Data: 
+Output Directory: 
+Alpha: 0.05
+Equal Var: False
+Two Tail: True
+TIFF DPI: 300

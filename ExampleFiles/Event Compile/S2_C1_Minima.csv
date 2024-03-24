@@ -1,0 +1,33 @@
+S2_C1_Minima,,,,
+Variable Metadata (Each repeat of variable indicates trial amount):,,,,
+"['Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X']",,,,
+NEXT_MATRIX,,,,
+51.480675,52.215084,52.014645,52.303131,52.298721
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+-2.513672,-1.510198,-2.616077,-2.963201,-1.829088
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+-34.899651,-30.856165,-35.361355,-34.989052,-35.579967
+-3.734288,-2.780982,-4.408658,-5.324763,-2.322197
+nan,nan,nan,nan,nan
+NEXT_MATRIX,,,,
+97,97,98,98,98
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+186,186,194,189,197
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+65,68,69,67,67
+187,185,191,188,195
+nan,nan,nan,nan,nan
+NEXT_MATRIX,,,,
+46.41148325,46.41148325,46.88995215,46.88995215,46.88995215
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+88.99521531,88.99521531,92.82296651,90.43062201,94.25837321
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+31.10047847,32.53588517,33.01435407,32.05741627,32.05741627
+89.47368421,88.51674641,91.38755981,89.95215311,93.30143541
+nan,nan,nan,nan,nan

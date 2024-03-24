@@ -181,13 +181,23 @@ def update_tree(tree, idx_list, time_series):
                 values=(idx, np.round(value, 3)),
             )
         remaining = 3 - min(3, len(idx_list))
-        for j in range(remaining):
-            tree.insert(
-                "",
-                "end",
-                text=f"{remaining + j}" if remaining != 1 else "3",
-                values=(np.nan, 0),
-            )
+        if remaining >= 3:
+            remaining = 3
+            for j in range(remaining):
+                tree.insert(
+                    "",
+                    "end",
+                    text=f"{j+1}" if remaining != 1 else "3",
+                    values=(np.nan, 0),
+                )
+        else:
+            for j in range(remaining):
+                tree.insert(
+                    "",
+                    "end",
+                    text=f"{remaining + j}" if remaining != 1 else "3",
+                    values=(np.nan, 0),
+                )
     except UnboundLocalError:  # means there are no events by default
         for _ in range(3):
             tree.insert(
@@ -352,31 +362,28 @@ def update_max(button_idx, max_idx, min_idx, ax, tree_max, _):
     clear_max(button_idx, max_idx, min_idx, ax, tree_max, _)
 
     def update_max_value(new_max):
-        try:
-            time_series = np.ravel(plots_file[:, plot_idx])
-            max_idx, min_idx = get_current_idxs(plot_idx)
+        time_series = np.ravel(plots_file[:, plot_idx])
+        max_idx, min_idx = get_current_idxs(plot_idx)
 
-            max_idx[button_idx] = new_max
-            new_max_idx = sorted(max_idx, key=nan_sort)
-            ax.clear()
+        max_idx[button_idx] = new_max
+        new_max_idx = sorted(max_idx, key=nan_sort)
+        ax.clear()
 
-            plot_time_series(ax, time_series, var_titles, plot_subtitles)
+        plot_time_series(ax, time_series, var_titles, plot_subtitles)
 
-            plot_events(new_max_idx, min_idx, time_series)
-            update_tree(tree_max, new_max_idx, time_series)
-            max_idx = new_max_idx
-            update_max_matrices(
-                max_idx,
-                time_series,
-                plot_idx,
-                all_maxidx_matrix,
-                all_maxval_matrix,
-                all_maxper_matrix,
-                trials,
-            )
-            canvas.draw_idle()
-        except Exception as e:
-            print(f"Error in update_max_value: {e}")
+        plot_events(new_max_idx, min_idx, time_series)
+        update_tree(tree_max, new_max_idx, time_series)
+        max_idx = new_max_idx
+        update_max_matrices(
+            max_idx,
+            time_series,
+            plot_idx,
+            all_maxidx_matrix,
+            all_maxval_matrix,
+            all_maxper_matrix,
+            trials,
+        )
+        canvas.draw_idle()
 
     def set_max_event(event):
         if event.inaxes and event.button == MouseButton.LEFT:
@@ -402,31 +409,28 @@ def update_min(button_idx, max_idx, min_idx, ax, _, tree_min):
     clear_min(button_idx, max_idx, min_idx, ax, _, tree_min)
 
     def update_min_value(new_min):
-        try:
-            time_series = np.ravel(plots_file[:, plot_idx])
-            max_idx, min_idx = get_current_idxs(plot_idx)
+        time_series = np.ravel(plots_file[:, plot_idx])
+        max_idx, min_idx = get_current_idxs(plot_idx)
 
-            min_idx[button_idx] = new_min
-            new_min_idx = sorted(min_idx, key=nan_sort)
-            ax.clear()
+        min_idx[button_idx] = new_min
+        new_min_idx = sorted(min_idx, key=nan_sort)
+        ax.clear()
 
-            plot_time_series(ax, time_series, var_titles, plot_subtitles)
+        plot_time_series(ax, time_series, var_titles, plot_subtitles)
 
-            plot_events(max_idx, new_min_idx, time_series)
-            update_tree(tree_min, new_min_idx, time_series)
-            min_idx = new_min_idx
-            update_min_matrices(
-                min_idx,
-                time_series,
-                plot_idx,
-                all_minidx_matrix,
-                all_minval_matrix,
-                all_minper_matrix,
-                trials,
-            )
-            canvas.draw_idle()
-        except Exception as e:
-            print(f"Error in update_min_value: {e}")
+        plot_events(max_idx, new_min_idx, time_series)
+        update_tree(tree_min, new_min_idx, time_series)
+        min_idx = new_min_idx
+        update_min_matrices(
+            min_idx,
+            time_series,
+            plot_idx,
+            all_minidx_matrix,
+            all_minval_matrix,
+            all_minper_matrix,
+            trials,
+        )
+        canvas.draw_idle()
 
     def set_min_event(event):
         if event.inaxes and event.button == MouseButton.LEFT:
@@ -601,7 +605,6 @@ def save_to_csv(file_path, matrices, var_titles):
             else:
                 delim_check = True
 
-            # for slice_idx in range(matrix.shape[2]):
             for slice_idx in range(matrix.shape[0]):
                 for row in matrix[:, :, slice_idx]:
                     writer.writerow(row)
@@ -626,7 +629,7 @@ def save_all_events(
 
         result = messagebox.askyesno(
             "Save All Events",
-            f"Are you sure you want to save all events?\nThis will save events to:\n\t{output_path}\nWith filenames:\n\t{file_prefix}_Maxima.csv\n\t{file_prefix}_Minima.csv\nSelecting 'Yes' will return you to the main window upon saving.",
+            f"Are you sure you want to save all events?\nThis will save events to:\n\t{output_path}\n\nWith filenames:\n\t{file_prefix}_Maxima.csv\n\t{file_prefix}_Minima.csv\nSelecting 'Yes' will return you to the main window upon saving.",
         )
 
         if result:
@@ -686,7 +689,6 @@ def update_max_matrices(
 
         return (row, col, slice_idx)
 
-    # Update the max indices and values in all_maxidx_matrix and all_maxval_matrix
     for i, max_index in enumerate(max_idx):
         idx = event_index(plot_idx)
         idx_row = idx[0] + i
@@ -720,7 +722,6 @@ def update_min_matrices(
 
         return (row, col, slice_idx)
 
-    # Update the min indices and values in all_minidx_matrix and all_minval_matrix
     for i, min_index in enumerate(min_idx):
         idx = event_index(plot_idx)
         idx_row = idx[0] + i
@@ -754,8 +755,6 @@ plots_file = plots_file_str.astype(float)  # Arrives as DATA x Trial+Var x Subje
 trials = int(sys.argv[4])  # Takes number of trials from main script
 var_titles = sys.argv[5].split()  # Takes variable title from main script
 events_out = sys.argv[6]  # Takes output file from main script
-
-# ERROR HANDLING
 
 plot_idx = 0
 trial_counter = 0
@@ -836,8 +835,6 @@ general_btn_specs = [
 ) = [
     np.full((3, trials, len(var_titles)), np.nan) for _ in range(6)
 ]  # Creates empty matrices for holding max and min values,indices, percent of trial length (6 total)
-print(f"Size of All Max Value Matrix: {all_maxval_matrix.shape}")
-# Calls to populate the window initially
 fig, ax, canvas = create_figure()
 max_idx, min_idx = set_plot(ax, time_series)
 general_buttons = []
