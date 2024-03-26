@@ -1,0 +1,27 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Biomechanics Toolbox
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Walter
+    family-names: Menke
+    email: walt.menke@gmail.com
+    orcid: 'https://orcid.org/0009-0006-6403-3495'
+repository-code: 'https://github.com/WaltMenke/BiomechanicsToolbox'
+abstract: >-
+  A Python-based GUI developed to consolidate biomechanics
+  data processing steps, enhance graphical presentation, and perform some statistical analysis.
+keywords:
+  - python
+  - gui
+  - biomechanics
+  - processing
+license: GPL-3.0
+commit: aeac512
+version: 1.0.0
+date-released: '2024-03-26'
