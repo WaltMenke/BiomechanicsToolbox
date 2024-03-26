@@ -1,7 +1,7 @@
-S2_C2
-Variable Metadata (Each repeat of variable indicates trial amount):
-"['LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnklePower_X', 'LeftAnklePower_X', 'LeftAnklePower_X', 'LeftAnklePower_X', 'LeftAnklePower_X']"
-NEXT_MATRIX
+S2_C2,,,,
+Variable Metadata (Each repeat of variable indicates trial amount):,,,,
+"['Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X']",,,,
+NEXT_MATRIX,,,,
 10.655653,7.647698,9.755304,9.243187,10.291351
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
@@ -11,23 +11,23 @@ nan,nan,nan,nan,nan
 0.193812,0.050007,0.124979,0.112442,0.155714
 3.969445,3.218058,3.435406,3.60215,3.58795
 nan,nan,nan,nan,nan
-NEXT_MATRIX
-76.0,78.0,76.0,76.0,77.0
+NEXT_MATRIX,,,,
+76,78,76,76,77
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
-21.0,19.0,20.0,19.0,18.0
-89.0,89.0,88.0,89.0,89.0
+21,19,20,19,18
+89,89,88,89,89
 nan,nan,nan,nan,nan
-NEXT_MATRIX
-75.24752475247524,77.22772277227723,75.24752475247524,75.24752475247524,76.23762376237624
-nan,nan,nan,nan,nan
-nan,nan,nan,nan,nan
+NEXT_MATRIX,,,,
+75.24752475,77.22772277,75.24752475,75.24752475,76.23762376
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
-20.792079207920793,18.81188118811881,19.801980198019802,18.81188118811881,17.82178217821782
-88.11881188118812,88.11881188118812,87.12871287128714,88.11881188118812,88.11881188118812
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+20.79207921,18.81188119,19.8019802,18.81188119,17.82178218
+88.11881188,88.11881188,87.12871287,88.11881188,88.11881188
 nan,nan,nan,nan,nan

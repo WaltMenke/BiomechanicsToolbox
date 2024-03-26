@@ -1,7 +1,7 @@
-S3_C2
-Variable Metadata (Each repeat of variable indicates trial amount):
-"['LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnklePower_X', 'LeftAnklePower_X', 'LeftAnklePower_X', 'LeftAnklePower_X', 'LeftAnklePower_X']"
-NEXT_MATRIX
+S3_C2,,,,
+Variable Metadata (Each repeat of variable indicates trial amount):,,,,
+"['Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X']",,,,
+NEXT_MATRIX,,,,
 -5.799717,-7.85869,-8.381524,-7.956368,-7.682351
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
@@ -11,23 +11,23 @@ nan,nan,nan,nan,nan
 -1.240598,-0.828971,-1.056868,-0.978956,-0.483891
 nan,nan,nan,nan,-0.935941
 nan,nan,nan,nan,nan
-NEXT_MATRIX
-16.0,14.0,13.0,13.0,13.0
+NEXT_MATRIX,,,,
+16,14,13,13,13
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
-80.0,80.0,81.0,80.0,79.0
+80,80,81,80,79
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
-71.0,67.0,71.0,71.0,7.0
-nan,nan,nan,nan,68.0
+71,67,71,71,7
+nan,nan,nan,nan,68
 nan,nan,nan,nan,nan
-NEXT_MATRIX
-15.841584158415841,13.861386138613863,12.871287128712872,12.871287128712872,12.871287128712872
-nan,nan,nan,nan,nan
-nan,nan,nan,nan,nan
-79.20792079207921,79.20792079207921,80.19801980198021,79.20792079207921,78.21782178217822
+NEXT_MATRIX,,,,
+15.84158416,13.86138614,12.87128713,12.87128713,12.87128713
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
-70.29702970297029,66.33663366336634,70.29702970297029,70.29702970297029,6.9306930693069315
-nan,nan,nan,nan,67.32673267326733
+79.20792079,79.20792079,80.1980198,79.20792079,78.21782178
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+70.2970297,66.33663366,70.2970297,70.2970297,6.930693069
+nan,nan,nan,nan,67.32673267
 nan,nan,nan,nan,nan

@@ -1,7 +1,7 @@
-S2_C2
-Variable Metadata (Each repeat of variable indicates trial amount):
-"['LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleAngle_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnkleMoment_X', 'LeftAnklePower_X', 'LeftAnklePower_X', 'LeftAnklePower_X', 'LeftAnklePower_X', 'LeftAnklePower_X']"
-NEXT_MATRIX
+S2_C2,,,,
+Variable Metadata (Each repeat of variable indicates trial amount):,,,,
+"['Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Angle_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Moment_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X', 'Right_Ankle_Power_X']",,,,
+NEXT_MATRIX,,,,
 -3.98001,-5.493334,-7.545027,-5.783177,-8.521828
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
@@ -11,23 +11,23 @@ nan,nan,nan,nan,nan
 -0.501308,-0.575374,-0.735992,-0.633517,-0.751315
 -0.792762,-0.72112,-0.674926,-0.66869,-0.798705
 nan,nan,nan,nan,nan
-NEXT_MATRIX
-15.0,17.0,16.0,15.0,15.0
+NEXT_MATRIX,,,,
+15,17,16,15,15
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
-79.0,78.0,78.0,79.0,78.0
+79,78,78,79,78
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
-9.0,9.0,9.0,8.0,8.0
-66.0,67.0,67.0,66.0,67.0
+9,9,9,8,8
+66,67,67,66,67
 nan,nan,nan,nan,nan
-NEXT_MATRIX
-14.85148514851485,16.831683168316832,15.841584158415841,14.85148514851485,14.85148514851485
-nan,nan,nan,nan,nan
-nan,nan,nan,nan,nan
-78.21782178217822,77.22772277227723,77.22772277227723,78.21782178217822,77.22772277227723
+NEXT_MATRIX,,,,
+14.85148515,16.83168317,15.84158416,14.85148515,14.85148515
 nan,nan,nan,nan,nan
 nan,nan,nan,nan,nan
-8.91089108910891,8.91089108910891,8.91089108910891,7.920792079207921,7.920792079207921
-65.34653465346535,66.33663366336634,66.33663366336634,65.34653465346535,66.33663366336634
+78.21782178,77.22772277,77.22772277,78.21782178,77.22772277
+nan,nan,nan,nan,nan
+nan,nan,nan,nan,nan
+8.910891089,8.910891089,8.910891089,7.920792079,7.920792079
+65.34653465,66.33663366,66.33663366,65.34653465,66.33663366
 nan,nan,nan,nan,nan

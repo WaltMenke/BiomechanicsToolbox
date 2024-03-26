@@ -121,8 +121,11 @@ pattern = r"^S\d{1,2}_C\d{1,2}_(Maxima|Minima)\.csv$"  # Ensures naming structur
 relevant_files = list_csv_files(compile_in)
 for file_name in relevant_files:
     if not re.match(pattern, file_name):
-        print("Error: File", file_name, "does not match the required naming structure.")
-        break
+        messagebox.showerror(
+            "Error",
+            f"File {file_name} does not match the required naming structure.",
+        )
+        sys.exit()
 else:
     pass
 
@@ -157,7 +160,7 @@ for condition, files in files_by_condition.items():
                 "Warning",
                 f"Number of entries in condition {condition} differs from others. Check the file inputs in {compile_in} and try again.",
             )
-            break
+            sys.exit()
 else:
     pass
 
@@ -169,9 +172,11 @@ for condition, files in files_by_condition.items():
             "Warning",
             f"Number of 'Maxima' files does not match number of 'Minima' files in condition {condition}. Check the file inputs in {compile_in} and try again.",
         )
-        break
+        sys.exit()
     else:
         pass
+
+all_var_reference = []
 for condition, files in files_by_condition.items():
     reference_third_line = None
     for file_name in files:
@@ -186,21 +191,33 @@ for condition, files in files_by_condition.items():
                     "Warning",
                     f"File {file_name} does not match expected naming structure. Check the file inputs in {compile_in} and try again.",
                 )
-                break
+                sys.exit()
+            next(csv_reader)
+            next(csv_reader)
+            third_line = next(csv_reader)
+            if reference_third_line is None:
+                ref_file = file_name
+                reference_third_line = third_line
+                all_var_reference.append(reference_third_line)
             else:
-                next(csv_reader)
-                next(csv_reader)
-                third_line = next(csv_reader)
-                if reference_third_line is None:
-                    ref_file = file_name
-                    reference_third_line = third_line
-                else:
-                    if third_line != reference_third_line:
-                        messagebox.showerror(
-                            "Warning",
-                            f"Third line of data in file {file_name} relative to expected from {ref_file}. Check the file inputs in {compile_in} and try again.",
-                        )
-                        break
+                if third_line != reference_third_line:
+                    messagebox.showerror(
+                        "Warning",
+                        f"Third line of data in file {file_name} is different relative to expected from {ref_file}. Check the file inputs in {compile_in} and try again.",
+                    )
+                    sys.exit()
+
+
+def all_same(items):
+    return all(x == items[0] for x in items)
+
+
+if not all_same(all_var_reference):
+    messagebox.showerror(
+        "Warning",
+        f"Variable name(s) or amount(s) between conditions do not match. Check the file inputs in {compile_in} and try again.",
+    )
+    sys.exit()
 lists = [ast.literal_eval(entry) for entry in reference_third_line if entry]
 flat_entries = [item for sublist in lists for item in sublist]
 variable_names = list(OrderedDict.fromkeys(flat_entries))
@@ -339,7 +356,10 @@ savepath = filedialog.asksaveasfilename(
 if savepath:
     workbook.save(filename=savepath)
 else:
-    messagebox.showinfo("Save Error", "Save operation canceled by user.")
+    messagebox.showinfo(
+        "Save Error", "Save operation canceled by user. Returning to main window."
+    )
+    sys.exit()
 workbook.close()
 
 
@@ -416,7 +436,10 @@ savepath = filedialog.asksaveasfilename(
 if savepath:
     workbook.save(filename=savepath)
 else:
-    messagebox.showinfo("Save Error", "Save operation canceled by user.")
+    messagebox.showinfo(
+        "Save Error", "Save operation canceled by user. Returning to main window."
+    )
+    sys.exit()
 workbook.close()
 messagebox.showinfo(
     "Save Successful",
