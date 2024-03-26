@@ -392,6 +392,16 @@ def update_max(button_idx, max_idx, min_idx, ax, tree_max, _):
             possible_indices = np.arange(
                 new_event - find_tolerance, new_event + find_tolerance
             )
+            possible_indices = possible_indices[
+                (possible_indices >= 0) & (possible_indices < len(time_series))
+            ]
+            try:
+                desired_index_within_range = np.argmin(time_series[possible_indices])
+            except ValueError:
+                messagebox.showwarning(
+                    "Warning", "You clicked out of the graph bounds. Please try again."
+                )
+                return
             desired_index_within_range = np.argmax(time_series[possible_indices])
             desired_index = possible_indices[desired_index_within_range]
             update_max_value(desired_index)
@@ -439,7 +449,16 @@ def update_min(button_idx, max_idx, min_idx, ax, _, tree_min):
             possible_indices = np.arange(
                 new_event - find_tolerance, new_event + find_tolerance
             )
-            desired_index_within_range = np.argmin(time_series[possible_indices])
+            possible_indices = possible_indices[
+                (possible_indices >= 0) & (possible_indices < len(time_series))
+            ]
+            try:
+                desired_index_within_range = np.argmin(time_series[possible_indices])
+            except ValueError:
+                messagebox.showwarning(
+                    "Warning", "You clicked out of the graph bounds. Please try again."
+                )
+                return
             desired_index = possible_indices[desired_index_within_range]
             update_min_value(desired_index)
             fig.canvas.mpl_disconnect(min_cid)
@@ -499,22 +518,24 @@ def clear_min(button_idx, max_idx, min_idx, ax, _, tree_min):
     canvas.draw_idle()
 
 
-def reset_current(plots_file, ax):
-    result = messagebox.askyesno(
-        "Reset Plot", "Are you sure you want to reset the current plot?"
-    )
-    if result:
-        iterate_plot(plots_file, ax)
+def reset_current(plots_file, ax, plot_idx_history):
+    messagebox.showinfo("Info", "This isn't working right now. Try again later!")
     pass
+    # result = messagebox.askyesno(
+    #     "Reset Plot", "Are you sure you want to reset the current plot?"
+    # )
+    # if result:
+    #     plot_idx_history.remove(plot_idx)
+    #     iterate_plot(plots_file, ax, plot_idx_history)
+    # pass
 
 
-def iterate_plot(plots_file, ax):
-    global plot_idx, trial_counter
+def iterate_plot(plots_file, ax, plot_idx_history):
+    global plot_idx, trial_counter, all_maxidx_matrix, all_minidx_matrix, all_maxval_matrix, all_minval_matrix, all_maxper_matrix, all_minper_matrix
     time_series = np.ravel(plots_file[:, plot_idx])
 
     if plot_idx not in plot_idx_history:  # Plot has not happened before
         max_idx, min_idx, _, _ = find_prominent(time_series)
-
         ax.clear()
         update_tree(tree_max, max_idx, time_series)
         update_tree(tree_min, min_idx, time_series)
@@ -557,7 +578,7 @@ def iterate_plot(plots_file, ax):
         canvas.draw()
 
 
-def next_plot(plots_file, ax):
+def next_plot(plots_file, ax, plot_idx_history):
     global plot_idx, trial_counter
     plot_idx += 1
     if (
@@ -573,10 +594,10 @@ def next_plot(plots_file, ax):
     )
     if trial_counter > trials - 1:
         trial_counter = 0
-    iterate_plot(plots_file, ax)
+    iterate_plot(plots_file, ax, plot_idx_history)
 
 
-def previous_plot(plots_file, ax):
+def previous_plot(plots_file, ax, plot_idx_history):
     global plot_idx, trial_counter
     plot_idx -= 1
     if plot_idx < 0:  # Catches when we go backwards from the first plot
@@ -584,7 +605,7 @@ def previous_plot(plots_file, ax):
     trial_counter -= 1
     if trial_counter < 0:
         trial_counter = trials - 1
-    iterate_plot(plots_file, ax)
+    iterate_plot(plots_file, ax, plot_idx_history)
 
 
 def save_to_csv(file_path, matrices, var_titles):
@@ -786,21 +807,21 @@ clear_btn_specs = [
 general_btn_specs = [
     (
         "Reset Plot",
-        lambda: reset_current(plots_file, ax),
+        lambda: reset_current(plots_file, ax, plot_idx_history),
         17,
         1,
         "navigate.TButton",
     ),
     (
         "Next Plot",
-        lambda: next_plot(plots_file, ax),
+        lambda: next_plot(plots_file, ax, plot_idx_history),
         1,
         2,
         "navigate.TButton",
     ),
     (
         "Previous Plot",
-        lambda: previous_plot(plots_file, ax),
+        lambda: previous_plot(plots_file, ax, plot_idx_history),
         1,
         1,
         "navigate.TButton",
