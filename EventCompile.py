@@ -69,12 +69,22 @@ root.withdraw()
 root.iconbitmap("BT_Icon.ico")
 root.iconbitmap(default="BT_Icon.ico")
 
-compile_in = sys.argv[1]
+try:
+    compile_in = sys.argv[1]
+except IndexError:
+    print(
+        "Error: This script isn't expected to run directly, please run BiomechanicsToolbox.py instead."
+    )
+    messagebox.showerror(
+        "Error",
+        "This script isn't expected to run directly, please run BiomechanicsToolbox.py instead.",
+    )
+    sys.exit()
 compile_out = sys.argv[2]
 
 result = messagebox.askyesno(
     "Compile",
-    "Before compiling, are you sure the input directory only contains properly named CSV Event Output files?\n\nNaming schema should follow: 'S1_C1_Maxima.csv', 'S1_C1_Minima.csv', etc.",
+    "Before compiling, are you sure the input directory only contains properly named CSV Event Output files?\n\nNaming schema should follow:\n'S1_C1_Maxima.csv', 'S1_C1_Minima.csv', etc.",
     icon="question",
 )
 if not result:

@@ -469,10 +469,22 @@ def open_quality_check_tab():
                 subject_num = qual_subs.get()
             else:
                 subject_num = qual_subs.get().split(",")
-            quality_subject = [int(x) - 1 for x in subject_num]
+            try:
+                quality_subject = [int(x) - 1 for x in subject_num]
+            except ValueError:
+                messagebox.showerror(
+                    "Input Error",
+                    "Something is wrong with the subject inputs. Make sure they are integers separated by commas.",
+                    icon="error",
+                )
+                return
         for sub in range(0, len(quality_subject)):
             plots_out += bf.quality_check(qual_check_in, int(quality_subject[sub]))
         qual_plot_num = 0
+        messagebox.showinfo(
+            "Creating Plots",
+            "Please wait a moment while plots are created.\n\nYou can cycle through plots with Left and Right arrow keys.",
+        )
 
         def exit_qual(qual_window):
             qual_window.destroy()
@@ -534,6 +546,9 @@ def open_quality_check_tab():
                     self.plots.append(frm)
                 self.plots[self.qual_plot_num].tkraise()
 
+                self.master.bind("<Left>", lambda event: self.previous_plot())
+                self.master.bind("<Right>", lambda event: self.next_plot())
+
             def next_plot(self):
                 if self.qual_plot_num == len(plots_out) - 1:
                     return
@@ -551,24 +566,10 @@ def open_quality_check_tab():
         qual_window.title("Biomechanics Toolbox - Quality Checking")
         qual_window.iconbitmap("BT_Icon.ico")
         qual_window.iconbitmap(default="BT_Icon.ico")
-        center_window(qual_window, 1100, 1100)
+        center_window(qual_window, 1100, 800)
 
         canvas = QualityPlot(qual_window, plots_out)
         canvas.pack(expand=0, fill="none")
-
-        next_button = ttk.Button(
-            qual_window,
-            text="Next\n--->",
-            command=canvas.next_plot,
-        )
-        next_button.pack(side=tk.RIGHT)
-
-        previous_button = ttk.Button(
-            qual_window,
-            text="Previous\n <---",
-            command=canvas.previous_plot,
-        )
-        previous_button.pack(side=tk.LEFT)
 
         qual_menubar = ttk.Menu(master=qual_window)
         qualMenu = ttk.Menu(qual_menubar)
@@ -581,6 +582,12 @@ def open_quality_check_tab():
         )
         qualMenu.add_command(label="Exit", command=lambda: exit_qual(qual_window))
         qual_menubar.add_cascade(label="File", menu=qualMenu)
+
+        navMenu = ttk.Menu(qual_menubar)
+        navMenu.add_command(label="Next", command=lambda: canvas.next_plot())
+        navMenu.add_command(label="Previous", command=lambda: canvas.previous_plot())
+        qual_menubar.add_cascade(label="Navigation", menu=navMenu)
+
         qual_window.config(menu=qual_menubar)
 
     quality_frame = ttk.Frame(quality_check_tab)
@@ -608,7 +615,7 @@ def open_eventpick_tab():
     main_tab.select(eventpick_tab)
     eventpick_label = tk.Label(
         eventpick_tab,
-        text="This function allows you to pick discrete events from a batched output file.\nNOTE: Select one subject and one condition only.",
+        text="This function allows you to pick discrete events from a batched output file.\nNOTE: Select one subject and one condition only.\n\nHint: You can cycle the plots with the Left and Right arrow keys.",
     )
     eventpick_label.pack(fill="x", anchor="n", expand=True)
 
@@ -2135,8 +2142,8 @@ def load_spm():
         "Two Tail": two_tail,
         "TIFF DPI": spm_dpi,
         "Group 1 Color": tk.StringVar(),
-        "Group 2 Color": tk.StringVar() if len(dropdowns) > 1 else None,
-        "Group 3 Color": tk.StringVar() if len(dropdowns) > 2 else None,
+        "Group 2 Color": tk.StringVar() if len(entry_boxes) > 1 else None,
+        "Group 3 Color": tk.StringVar() if len(entry_boxes) > 2 else None,
         "Plot X Label": spm_x_label,
         "Group Names": group_names,
         "Plot Y Labels": tk.StringVar(),
@@ -2172,8 +2179,8 @@ def load_spm():
                             )
                             return
                     elif "Color" in param_name:
-                        dropdowns[index][1].delete(0, tk.END)
-                        dropdowns[index][1].insert(0, param_value)
+                        entry_boxes[index][1].delete(0, tk.END)
+                        entry_boxes[index][1].insert(0, param_value)
                 elif "Output" in param_name:
                     output_box[0].delete(0, tk.END)
                     output_box[0].insert(0, param_value)
@@ -2195,12 +2202,14 @@ def handle_save_params():
     try:
         save_params(main_tab.tab(main_tab.select(), "text"))
     except Exception as e:
+        result = messagebox.askyesno(
+            "Save Failed",
+            "Save failed - do you have a tab open?\n\nClick Yes to see error log.\n\nClick No to return.",
+        )
+        if not result:
+            return
         traceback_msg = traceback.format_exc()
         messagebox.showerror("Save Failed", traceback_msg)
-        # messagebox.showerror(
-        #     "Save Failed",
-        #     f"An error occurred- you may not have a tab open.\n\nSee error log:\n{e}.",
-        # )
         return
 
 
@@ -2208,12 +2217,14 @@ def handle_load_params():
     try:
         load_params(main_tab.tab(main_tab.select(), "text"))
     except Exception as e:
+        result = messagebox.askyesno(
+            "Load Failed",
+            "Load failed - do you have a tab open?\n\nClick Yes to see error log.\n\nClick No to return.",
+        )
+        if not result:
+            return
         traceback_msg = traceback.format_exc()
         messagebox.showerror("Load Failed", traceback_msg)
-        # messagebox.showerror(
-        #     "Load Failed",
-        #     f"An error occurred- you may not have a tab open.\n\nSee error log:\n{e}.",
-        # )
         return
 
 

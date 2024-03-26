@@ -578,7 +578,7 @@ def iterate_plot(plots_file, ax, plot_idx_history):
         canvas.draw()
 
 
-def next_plot(plots_file, ax, plot_idx_history):
+def next_plot(plots_file, ax):
     global plot_idx, trial_counter
     plot_idx += 1
     if (
@@ -597,7 +597,7 @@ def next_plot(plots_file, ax, plot_idx_history):
     iterate_plot(plots_file, ax, plot_idx_history)
 
 
-def previous_plot(plots_file, ax, plot_idx_history):
+def previous_plot(plots_file, ax):
     global plot_idx, trial_counter
     plot_idx -= 1
     if plot_idx < 0:  # Catches when we go backwards from the first plot
@@ -663,6 +663,8 @@ def save_all_events(
                     messagebox.showinfo("Save Canceled", "Save operation canceled.")
                     return
         if result:
+            all_maxidx_matrix = np.round(all_maxidx_matrix)
+            all_minidx_matrix = np.round(all_minidx_matrix)
             save_to_csv(
                 max_file_path,
                 [all_maxval_matrix, all_maxidx_matrix, all_maxper_matrix],
@@ -769,7 +771,17 @@ def get_current_idxs(plot_idx):
 root = ttk.Window()
 center_window(root, 1050, 525)
 
-subject_in = sys.argv[1]  # Takes subject from main script
+try:
+    subject_in = sys.argv[1]  # Takes subject from main script
+except IndexError:
+    print(
+        "Error: This script isn't expected to run directly, please run BiomechanicsToolbox.py instead."
+    )
+    messagebox.showerror(
+        "Error",
+        "This script isn't expected to run directly, please run BiomechanicsToolbox.py instead.",
+    )
+    sys.exit()
 condition_in = sys.argv[2]  # Takes condition from main script
 plots_file_str = np.load(sys.argv[3])  # Takes data to plot from main script
 plots_file = plots_file_str.astype(float)  # Arrives as DATA x Trial+Var x Subject
@@ -814,14 +826,14 @@ general_btn_specs = [
     ),
     (
         "Next Plot",
-        lambda: next_plot(plots_file, ax, plot_idx_history),
+        lambda: next_plot(plots_file, ax),
         1,
         2,
         "navigate.TButton",
     ),
     (
         "Previous Plot",
-        lambda: previous_plot(plots_file, ax, plot_idx_history),
+        lambda: previous_plot(plots_file, ax),
         1,
         1,
         "navigate.TButton",
@@ -921,5 +933,7 @@ root.columnconfigure(1, weight=1)
 root.columnconfigure(2, weight=1)
 root.columnconfigure(3, weight=0)
 root.protocol("WM_DELETE_WINDOW", close_confirm)
+root.bind("<Left>", lambda event: previous_plot(plots_file, ax))
+root.bind("<Right>", lambda event: next_plot(plots_file, ax))
 
 root.mainloop()
