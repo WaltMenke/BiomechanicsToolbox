@@ -195,6 +195,7 @@ def open_scriptgen_tab():
             title="Select Script Template",
             multiple=False,
             filetypes=(("V3D Pipeline", "*.v3s"),),
+            initialdir=".",
         )
         if not script_direc:
             return
@@ -206,6 +207,7 @@ def open_scriptgen_tab():
             title="Select Model Template",
             multiple=False,
             filetypes=(("V3D Model", "*.mdh"),),
+            initialdir=".",
         )
         if not model_direc:
             return
@@ -217,6 +219,7 @@ def open_scriptgen_tab():
             title="Select Height-Weight File",
             multiple=False,
             filetypes=(("Excel", "*.xlsx"),),
+            initialdir=".",
         )
         if not heightweight_direc:
             return
@@ -385,6 +388,7 @@ def open_normalize_tab():
             title="Select Batched Data File",
             filetypes=(("TXT Files", "*.txt"),),
             multiple=False,
+            initialdir=".",
         )
         if not in_direc:
             return
@@ -433,6 +437,7 @@ def open_quality_check_tab():
             title="Select Batched Data File",
             filetypes=(("TXT Files", "*.txt"),),
             multiple=False,
+            initialdir=".",
         )
         if not in_direc:
             return
@@ -729,6 +734,7 @@ def open_eventpick_tab():
             title="Select Raw Data File",
             filetypes=(("TXT Files", "*.txt"),),
             multiple=False,
+            initialdir=".",
         )
         if not in_direc:
             return
@@ -908,6 +914,7 @@ def open_ensemble_tab():
             title="Select Batched Data File",
             filetypes=(("TXT Files", "*.txt"),),
             multiple=False,
+            initialdir=".",
         )
         if not in_direc:
             return
@@ -1245,6 +1252,7 @@ def open_spm_tab():
             title="Select Group File",
             multiple=False,
             filetypes=(("Text Files", "*.txt"),),
+            initialdir=".",
         )
         if not file_path:
             return
