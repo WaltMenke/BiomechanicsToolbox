@@ -30,12 +30,13 @@ As of March 24th, 2024 there is a folder containing example input and output fil
 
 ## Features
 * Script Gen: generates Visual3D scripts and model files based on input templates with attached heights and weights.
-* Batch
-* Normalize
-* Event Pick
-* Event Compile
-* Ensemble
-* SPM (partially implemented)
+* Batch: compiles all trials for multiple subject inputs for a given condition into a text file that can be rehaped into the original 3d array.
+* Normalize: Normalize an input Batch file to 101 data points.
+* Quality Check: Import a Batch file that plots all trials of given variables for the desired subjects to ensure time series consistency.
+* Event Pick: Visually assess and change discrete events from the chosen variables for a selected subject and condition.
+* Event Compile: Process mean and standard deviations of all discrete events for each condition used as input.
+* Ensemble: Produce publication quality ensemble plots with desired axis label names, DPI, etc.
+* SPM (partially implemented): Perform statistical parametric mapping on two groups and produce output plots of comparisons.
 * EMG (not available)
 
 Please reach out to me if you have feedback, bug reports, etc!
