@@ -7,6 +7,9 @@ Please refer to the [BiomechancisToolbox.docx](BiomechanicsToolbox.docx) for fur
 
 If downloading all files from the main branch to run in your own IDE or terminal, run the [BiomechanicsToolbox.py](BiomechanicsToolbox.py) script only to initiate the program- all other python scripts are for functions or subprocess calls.
 
+## Current Version: v1.0.0
+Get the current release version [here](https://github.com/WaltMenke/BiomechanicsToolbox/releases/tag/v1.0.0). 
+
 ## Package Installation
 It is HIGHLY recommended to use a virtual environment and use:
 `pip install -r ToolboxRequirements.txt` 
