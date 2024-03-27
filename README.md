@@ -10,6 +10,12 @@ If downloading all files from the main branch to run in your own IDE or terminal
 ## Current Version: v1.0.0
 Get the current release version [here](https://github.com/WaltMenke/BiomechanicsToolbox/releases/tag/v1.0.0). 
 
+## Changes In Progress for next Version
+* SPSS ready event outputs
+* Kinematic and Kinetic sampling frequency settings to adjust the automatic find window for Event Picking
+* Adjust index output for events to be time-based
+* Allowing for NaNs to be present in the case of missing events, identified by a different symbol that can be passed by SPSS
+
 ## Package Installation
 It is HIGHLY recommended to use a virtual environment and use:
 `pip install -r ToolboxRequirements.txt` 
