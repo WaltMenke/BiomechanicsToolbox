@@ -1,5 +1,5 @@
 (101 135 8)
-LeftAnkleAngle, LeftAnkleAngle, LeftAnkleAngle, LeftAnkleMoment, LeftAnkleMoment, LeftAnkleMoment, LeftAnklePower, LeftAnklePower, LeftAnklePower, LeftHipAngle, LeftHipAngle, LeftHipAngle, LeftHipMoment, LeftHipMoment, LeftHipMoment, LeftHipPower, LeftHipPower, LeftHipPower, LeftKneeAngle, LeftKneeAngle, LeftKneeAngle, LeftKneeMoment, LeftKneeMoment, LeftKneeMoment, LeftKneePower, LeftKneePower, LeftKneePower
+RightAnkleAngle, RightAnkleAngle, RightAnkleAngle, RightAnkleMoment, RightAnkleMoment, RightAnkleMoment, RightAnklePower, RightAnklePower, RightAnklePower, RightHipAngle, RightHipAngle, RightHipAngle, RightHipMoment, RightHipMoment, RightHipMoment, RightHipPower, RightHipPower, RightHipPower, RightKneeAngle, RightKneeAngle, RightKneeAngle, RightKneeMoment, RightKneeMoment, RightKneeMoment, RightKneePower, RightKneePower, RightKneePower
 (1,1,1)
 5.93750200 6.81780700 3.10412900 7.61900700 -2.37458300 3.90037600 5.34373100 8.37493600
 4.40617300 2.54395500 -2.34089100 8.42584900 2.64965700 -0.48864900 4.17715800 3.72595100
