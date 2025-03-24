@@ -343,9 +343,12 @@ def batch(
         pattern = re.compile(
             f"{search_query}"
         )  # Compiles regular expression string for search
-        file_list = [
-            f for f in os.listdir(input_directory) if pattern.search(f)
-        ]  # Collects all files with specified suffix
+        file_list = sorted(
+            [f for f in os.listdir(input_directory) if pattern.search(f)],
+            key=lambda x: [
+                int(num) if num.isdigit() else num for num in re.findall(r"\d+|\D+", x)
+            ],
+        )  # Collects all files with specified suffix
         for filename in file_list:
             file_path = os.path.join(input_directory, filename)
             check_columns(file_path)

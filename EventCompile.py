@@ -5,7 +5,7 @@ import re
 import csv
 import ast
 import sys
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from collections import OrderedDict
 import tkinter as tk
 from tkinter import ttk, filedialog, PhotoImage, messagebox, simpledialog
@@ -14,6 +14,12 @@ import ttkbootstrap as ttk
 
 def list_csv_files(directory):
     csv_files = [file for file in os.listdir(directory) if file.endswith(".csv")]
+    csv_files.sort(
+        key=lambda x: [
+            int(num) if num.isdigit() else num
+            for num in re.findall(r"S(\d+)_C(\d+)", x)[0]
+        ]
+    )
     return csv_files
 
 
@@ -195,29 +201,23 @@ for condition, files in files_by_condition.items():
             next(csv_reader)
             next(csv_reader)
             third_line = next(csv_reader)
+            ignore_mismatch = False
             if reference_third_line is None:
                 ref_file = file_name
                 reference_third_line = third_line
                 all_var_reference.append(reference_third_line)
             else:
-                if third_line != reference_third_line:
-                    messagebox.showerror(
-                        "Warning",
-                        f"Third line of data in file {file_name} is different relative to expected from {ref_file}. Check the file inputs in {compile_in} and try again.",
+                if third_line != reference_third_line and not ignore_mismatch:
+                    result = messagebox.askokcancel(
+                        "Warning!",
+                        f"Third line of data in file {file_name} is different relative to expected from {ref_file}. Check the file inputs in {compile_in}. It is possible the CSV files do not have identical variable counts.\n\nYou may select 'Ok' to ignore this warning or 'Cancel' to terminate the operation.",
                     )
-                    sys.exit()
+                    if not result:
+                        sys.exit()
+                    else:
+                        ignore_mismatch = True
 
 
-def all_same(items):
-    return all(x == items[0] for x in items)
-
-
-if not all_same(all_var_reference):
-    messagebox.showerror(
-        "Warning",
-        f"Variable name(s) or amount(s) between conditions do not match. Check the file inputs in {compile_in} and try again.",
-    )
-    sys.exit()
 lists = [ast.literal_eval(entry) for entry in reference_third_line if entry]
 flat_entries = [item for sublist in lists for item in sublist]
 variable_names = list(OrderedDict.fromkeys(flat_entries))
@@ -255,103 +255,72 @@ for condition, files in files_by_condition.items():
     maxima_stats_by_condition[condition] = maxima_stats
     minima_stats_by_condition[condition] = minima_stats
 
-for condition, maxima_stats in maxima_stats_by_condition.items():
-    minima_stats = minima_stats_by_condition[condition]
-
-    reorg_max[condition] = []
-    reorg_min[condition] = []
-
-    for i in range(9):
-        for subject in range(len(sub_count)):
-            start_index = (subject * len(variable_names) * 9) + (
-                i * len(variable_names)
-            )
-
-            selected_maxima_rows = maxima_stats[
-                start_index : start_index + len(variable_names)
-            ]
-            selected_minima_rows = minima_stats[
-                start_index : start_index + len(variable_names)
-            ]
-
-            reorg_max[condition].extend(selected_maxima_rows)
-            reorg_min[condition].extend(selected_minima_rows)
-
 workbook = Workbook()
-for condition, max_data in reorg_max.items():
+num_events = 3
+rows_per_sub = 3 * 3 * len(variable_names)
+for condition, max_data in maxima_stats_by_condition.items():
     sheet = workbook.create_sheet(title="C" + str(condition))
-
     sheet.append(headers)
-    num_subjects = len(sub_count)
-    num_variables = len(variable_names)
-    num_events = 3
+    row_idx = 2
 
-    for number_counter in range(1, num_events + 1):
-        for subject_idx, subject in enumerate(sub_count):
-            for variable_idx, variable in enumerate(variable_names):
-                for event in range(1, num_events + 1):
-                    if number_counter == 1:
-                        sheet.append(
-                            [
-                                sub_count[subject_idx],
-                                variable,
-                                "Value",
-                                f"Event {event}",
-                            ]
-                        )
-                    elif number_counter == 2:
-                        sheet.append(
-                            [
-                                sub_count[subject_idx],
-                                variable,
-                                "Value",
-                                f"Event {event}",
-                            ]
-                        )
-                    elif number_counter == 3:
-                        sheet.append(
-                            [
-                                sub_count[subject_idx],
-                                variable,
-                                "Value",
-                                f"Event {event}",
-                            ]
-                        )
+    for data_label, data_matrix, start_col in [
+        ("maxima", max_data, 5),
+        ("minima", minima_stats_by_condition[condition], 7),
+    ]:
+        for i, row_data in enumerate(data_matrix, start=row_idx):
+            for j, value in enumerate(row_data, start=start_col):
+                sheet.cell(row=i, column=j).value = replace_nan(value)
 
-    for i, row in enumerate(
-        sheet.iter_rows(min_row=2, max_row=sheet.max_row, min_col=1, max_col=4), start=1
-    ):
-        subject_idx = (i - 1) // num_variables % num_subjects
-        variable_idx = (i - 1) // (num_events * 3) % num_variables
-        # Update SUBJECT column (iterate every 3 rows)
-        row[0].value = sub_count[subject_idx]
+    all_subject_data = []
+    for subject in sub_count:
+        subject_data = []
+        for data_type in ["Value", "Index", "Per_Loc"]:
+            for variable in variable_names:
+                clean_var = variable.replace("Right_", "").replace("Left_", "")
+                for event_idx in range(1, num_events + 1):
+                    subject_data.append(
+                        [subject, clean_var, data_type, f"Event {event_idx}"]
+                    )
+        all_subject_data.extend(subject_data)
 
-        # Update VARIABLE column
-        row[1].value = variable_names[variable_idx]
+    rows_to_copy = []
+    for row in range(2, sheet.max_row + 1):
+        row_data = [
+            sheet.cell(row=row, column=col).value
+            for col in range(1, sheet.max_column + 1)
+        ]
+        rows_to_copy.append(row_data)
 
-        # Update TYPE column
-        type_value_index = (i - 1) // (num_events * num_subjects * num_variables)
-        type_value = ["Value", "Index", "Per_Loc"][type_value_index]
-        row[2].value = type_value
+    for row in range(2, sheet.max_row + 1):
+        for col in range(1, sheet.max_column + 1):
+            sheet.cell(row=row, column=col).value = None
 
-        # Update NUMBER column
-        row[3].value = f"Event {(i - 1) % num_events + 1}"
+    for i in range(rows_per_sub):
+        for subject_idx in range(len(sub_count)):
+            old_idx = subject_idx * rows_per_sub + i
+            new_row = (
+                i * len(sub_count) + subject_idx + 2
+            )  # +2 because row 1 is headers
 
-    # Write maxima data
-    for i, max_row in enumerate(max_data, start=2):  # Start from the correct row index
-        for j, value in enumerate(max_row, start=5):
-            sheet.cell(row=i, column=j).value = replace_nan(value)
+            if old_idx < len(all_subject_data):
+                for col_idx, value in enumerate(all_subject_data[old_idx], start=1):
+                    sheet.cell(row=new_row, column=col_idx).value = value
 
-    # Write minima data
-    min_data = reorg_min[condition]
-    for i, min_row in enumerate(min_data, start=2):  # Start from the correct row index
-        for j, value in enumerate(min_row, start=7):
-            sheet.cell(row=i, column=j).value = replace_nan(value)
+            if old_idx < len(rows_to_copy):
+                row_data = rows_to_copy[old_idx]
+                for col_idx in range(
+                    5, len(row_data) + 1
+                ):  # Start from column 5 (data columns)
+                    sheet.cell(row=new_row, column=col_idx).value = row_data[
+                        col_idx - 1
+                    ]
+
+
 workbook.remove(workbook.active)
 savepath = filedialog.asksaveasfilename(
     defaultextension=".xlsx",
     filetypes=[("Excel files", "*.xlsx")],
-    initialfile="Events_By_Subject.xlsx",
+    initialfile="Events_Individual.xlsx",
 )
 if savepath:
     workbook.save(filename=savepath)
@@ -363,85 +332,77 @@ else:
 workbook.close()
 
 
-for matrix, avg_list, std_dev_list in [
-    (reorg_max, maxima_averages, maxima_std_devs),
-    (reorg_min, minima_averages, minima_std_devs),
-]:
-    for condition, rows in matrix.items():
-        avg_list[condition] = []
-        std_dev_list[condition] = []
+sheets = pd.read_excel(savepath, sheet_name=None)
+output_sheets = {}
+type_order = {"Value": 0, "Index": 1, "Per_Loc": 2}
+for sheet_name, df in sheets.items():
+    results = []
+    # Iterate over unique combinations of VARIABLE, TYPE, and NUMBER
+    for variable in sorted(df["VARIABLE"].unique()):  # Sort VARIABLE alphabetically
+        clean_var = variable.replace("Right_", "").replace("Left_", "")
+        for event in sorted(df["NUMBER"].unique()):  # Sort events numerically
+            for data_type in ["Value", "Index", "Per_Loc"]:
+                filtered = df[
+                    (df["VARIABLE"] == clean_var)
+                    & (df["TYPE"] == data_type)
+                    & (df["NUMBER"] == event)
+                ]
+                for i in range(0, len(filtered), len(sub_count)):
+                    chunk = filtered.iloc[i : i + len(sub_count)]
+                    maxima_avg = chunk["Maxima Avg"].mean(skipna=True)
+                    maxima_stdev = chunk["Maxima Avg"].std(skipna=True)
+                    minima_avg = chunk["Minima Avg"].mean(skipna=True)
+                    minima_stdev = chunk["Minima Avg"].std(skipna=True)
 
-        for chunk in range(len(rows) // (len(variable_names) * len(sub_count))):
-            for row_set in range(3):
-                avg_values = []
+                    # Replace empty or NaN values
+                    result_dict = {
+                        "VARIABLE": clean_var,
+                        "TYPE": data_type,
+                        "NUMBER": event,
+                        "Maxima Avg": np.nan if pd.isna(maxima_avg) else maxima_avg,
+                        "Maxima Stdev": (
+                            np.nan if pd.isna(maxima_stdev) else maxima_stdev
+                        ),
+                        "Minima Avg": np.nan if pd.isna(minima_avg) else minima_avg,
+                        "Minima Stdev": (
+                            np.nan if pd.isna(minima_stdev) else minima_stdev
+                        ),
+                    }
+                    results.append(result_dict)
 
-                for subject in range(len(sub_count)):
-                    start_index = (
-                        chunk * (len(variable_names) * len(sub_count)) + subject * 3
-                    )
+    processed_df = pd.DataFrame(results)
 
-                    selected_row = rows[start_index + row_set]
+    # Fill any remaining NaN values
+    processed_df = processed_df.fillna(value=np.nan)
 
-                    avg_value = selected_row[0]
-                    if not np.isnan(avg_value):
-                        avg_values.append(avg_value)
+    # Sort by TYPE (custom order), then by VARIABLE (alphabetically), and finally by NUMBER
+    processed_df["TYPE"] = processed_df["TYPE"].map(type_order)
+    processed_df = processed_df.sort_values(by=["TYPE", "VARIABLE", "NUMBER"])
 
-                if avg_values:
-                    row_avg = np.nanmean(avg_values)
-                    row_std = np.nanstd(avg_values)
+    # Convert back the TYPE from numerical values to the original categorical order
+    processed_df["TYPE"] = processed_df["TYPE"].map(
+        {v: k for k, v in type_order.items()}
+    )
 
-                    avg_list[condition].append(row_avg)
-                    std_dev_list[condition].append(row_std)
-                else:
-                    avg_list[condition].append(np.nan)
-                    std_dev_list[condition].append(np.nan)
+    output_sheets[sheet_name] = processed_df
 
-workbook = Workbook()
-for condition, _ in maxima_averages.items():
-    sheet = workbook.create_sheet(title="C" + str(condition))
-
-    value_rows = generate_value_rows(variable_names)
-    index_rows = generate_index_rows(variable_names)
-    per_loc_rows = generate_per_loc_rows(variable_names)
-    all_rows = value_rows + index_rows + per_loc_rows
-    for i, row_name in enumerate(all_rows, start=2):
-        sheet.cell(row=i, column=1).value = row_name[0]
-        sheet.cell(row=i, column=2).value = row_name[1]
-        sheet.cell(row=i, column=3).value = row_name[2]
-
-    sheet.cell(row=1, column=1).value = headers[1]
-    sheet.cell(row=1, column=2).value = headers[2]
-    sheet.cell(row=1, column=3).value = headers[3]
-    sheet.cell(row=1, column=4).value = headers[4]
-    sheet.cell(row=1, column=5).value = headers[5]
-    sheet.cell(row=1, column=6).value = headers[6]
-    sheet.cell(row=1, column=7).value = headers[7]
-
-    for i in range(len(maxima_averages[condition])):
-        max_avg = replace_nan(maxima_averages[condition][i])
-        max_std = replace_nan(maxima_std_devs[condition][i])
-        min_avg = replace_nan(minima_averages[condition][i])
-        min_std = replace_nan(minima_std_devs[condition][i])
-        sheet.cell(row=i + 2, column=4).value = max_avg
-        sheet.cell(row=i + 2, column=5).value = max_std
-        sheet.cell(row=i + 2, column=6).value = min_avg
-        sheet.cell(row=i + 2, column=7).value = min_std
-
-workbook.remove(workbook.active)
+# Save the file
 savepath = filedialog.asksaveasfilename(
     defaultextension=".xlsx",
     filetypes=[("Excel files", "*.xlsx")],
     initialfile="Events_Synthesized.xlsx",
 )
+
 if savepath:
-    workbook.save(filename=savepath)
+    with pd.ExcelWriter(savepath) as writer:
+        for sheet_name, sheet_df in output_sheets.items():
+            sheet_df.to_excel(writer, sheet_name=sheet_name, index=False)
+    messagebox.showinfo(
+        "Save Successful",
+        f"Events successfully compiled!",
+    )
 else:
     messagebox.showinfo(
         "Save Error", "Save operation canceled by user. Returning to main window."
     )
     sys.exit()
-workbook.close()
-messagebox.showinfo(
-    "Save Successful",
-    f"Events successfully compiled!",
-)

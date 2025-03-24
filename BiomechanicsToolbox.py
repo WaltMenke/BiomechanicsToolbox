@@ -814,7 +814,7 @@ def open_eventpick_tab():
         eventpick_frame, "Subject Number (enter ONE):", 10, "top"
     )
     event_condition = create_label_entry(
-        eventpick_frame, "Condition Number (enter ONE)):", 10, "top"
+        eventpick_frame, "Condition Number (enter ONE):", 10, "top"
     )
     execute_function_button(
         eventpick_frame,
@@ -2451,7 +2451,7 @@ github_label.bind("<Button-1>", open_github)
 
 author_label = ttk.Label(
     root,
-    text="\t          © Copyright 2023-2024, Walter Menke\nCreated in Python v3.12.2 on Windows 11 in Visual Studio Code v1.84.2.",
+    text="\t          © Copyright 2023-2025, Walter Menke\nCreated in Python v3.12.2 on Windows 11 in Visual Studio Code v1.84.2.",
     font=("Helvetica", 8),
 )
 author_label.pack(padx=5, pady=2, anchor="s")

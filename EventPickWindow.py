@@ -274,8 +274,11 @@ def scale_plot(ax):
 
 def plot_time_series(ax, data, var_titles, plot_subtitles):
     global plot_idx
+    var_titles_clean = [
+        title.replace("Right_", "").replace("Left_", "") for title in var_titles
+    ]
     ax.plot(data, color="black", linewidth=1, zorder=1)
-    ax.set_title(f"{var_titles[plot_idx]}\n{plot_subtitles[plot_idx]}")
+    ax.set_title(f"{var_titles_clean[plot_idx]}\n{plot_subtitles[plot_idx]}")
     ax.set_xlabel("Frame")
     ax.set_ylabel("Value")
     ax.spines["right"].set_visible(False)
@@ -608,11 +611,11 @@ def previous_plot(plots_file, ax):
     iterate_plot(plots_file, ax, plot_idx_history)
 
 
-def save_to_csv(file_path, matrices, var_titles):
+def save_to_csv(file_path, matrices, var_titles, subject):
     with open(file_path, "w", newline="") as csvfile:
         matrix_delim = ["NEXT_MATRIX"]
         writer = csv.writer(csvfile)
-        writer.writerow([f"S{subject_in}_C{condition_in}"])
+        writer.writerow([f"S{subject}_C{condition_in}"])
         writer.writerow(
             ["Variable Metadata (Each repeat of variable indicates trial amount):"]
         )
@@ -626,7 +629,7 @@ def save_to_csv(file_path, matrices, var_titles):
             else:
                 delim_check = True
 
-            for slice_idx in range(matrix.shape[0]):
+            for slice_idx in range(matrix.shape[2]):
                 for row in matrix[:, :, slice_idx]:
                     writer.writerow(row)
 
@@ -645,6 +648,25 @@ def save_all_events(
 ):
     try:
         file_prefix = f"S{subject}_C{condition}"
+        sub_check = messagebox.askyesno(
+            "Subject Confirmation",
+            f"Is the subject number {subject} correct? Selecting No will allow a number input.",
+        )
+        if not sub_check:
+            new_subject = simpledialog.askinteger(
+                "Subject Number Correction",
+                "Please enter the Subject Number you would like to save:",
+                minvalue=1,
+            )
+            if new_subject is not None:
+                subject = new_subject
+            else:
+                messagebox.showwarning(
+                    "Warning",
+                    "Invalid or no subject number provided. Using original value...",
+                )
+        file_prefix = f"S{subject}_C{condition}"
+
         max_file_path = os.path.join(output_path, f"{file_prefix}_Maxima.csv")
         min_file_path = os.path.join(output_path, f"{file_prefix}_Minima.csv")
 
@@ -669,11 +691,13 @@ def save_all_events(
                 max_file_path,
                 [all_maxval_matrix, all_maxidx_matrix, all_maxper_matrix],
                 var_titles,
+                subject,
             )
             save_to_csv(
                 min_file_path,
                 [all_minval_matrix, all_minidx_matrix, all_minper_matrix],
                 var_titles,
+                subject,
             )
             return_to_toolbox()
         else:
@@ -769,6 +793,7 @@ def get_current_idxs(plot_idx):
 
 
 root = ttk.Window()
+root.bell = lambda: None
 center_window(root, 1050, 525)
 
 try:
@@ -866,8 +891,8 @@ general_btn_specs = [
     all_maxper_matrix,
     all_minper_matrix,
 ) = [
-    np.full((3, trials, len(var_titles)), np.nan) for _ in range(6)
-]  # Creates empty matrices for holding max and min values,indices, percent of trial length (6 total)
+    np.full((3, trials, int(len(var_titles) / trials)), np.nan) for _ in range(6)
+]  # Creates empty matrices for holding max and min values,indices, percent of trial length (6 total matrices)
 fig, ax, canvas = create_figure()
 max_idx, min_idx = set_plot(ax, time_series)
 general_buttons = []
